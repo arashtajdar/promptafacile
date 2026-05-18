@@ -26,13 +26,23 @@ workflows:
       - name: Capacitor Sync
         script: |
           npx cap sync ios
-      - name: Build iOS IPA
+      - name: Build Unsigned iOS IPA
         script: |
-          # Note: If you have connected your Apple developer account in Codemagic dashboard,
-          # it will automatically sign the build. Otherwise, this command builds the Xcode project.
-          xcode-project build-ipa \
-            --project ios/App/App.xcodeproj \
-            --scheme App
+          # Compile the Xcode project with signing disabled to allow building without a developer account
+          xcodebuild -project ios/App/App.xcodeproj \
+                     -scheme App \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     -derivedDataPath build_output \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     clean build
+          
+          # Package the compiled .app folder into a standard unsigned .ipa file for sideloading
+          mkdir -p build/ios/ipa
+          mkdir -p Payload
+          cp -r build_output/Build/Products/Release-iphoneos/App.app Payload/
+          zip -r build/ios/ipa/App.ipa Payload
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
