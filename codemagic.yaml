@@ -26,9 +26,6 @@ workflows:
       - name: Capacitor Sync
         script: |
           npx cap sync ios
-      - name: CocoaPods Install
-        script: |
-          cd ios/App && pod install
       - name: Build iOS IPA
         script: |
           # Note: If you have connected your Apple developer account in Codemagic dashboard,
