@@ -32,14 +32,35 @@ workflows:
       - name: Capacitor Sync
         script: |
           npx cap sync ios
+      - name: Create ExportOptions.plist
+        script: |
+          # Generates the exact Xcode export configuration for the app-store submission
+          cat <<EOF > /tmp/ExportOptions.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>ND24U8LL54</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.promptafacile.teleprompter</key>
+                  <string>f1d658d3-f218-460e-9f7b-c7df36dd3457</string>
+              </dict>
+          </dict>
+          </plist>
+          EOF
       - name: Build Code-Signed iOS IPA
         script: |
-          # Compiles and exports the fully signed production IPA package.
-          # Codemagic automatically detects the CM_CERTIFICATE and CM_PROVISIONING_PROFILE
-          # environment variables and installs them into the keychain beforehand!
+          # Compiles and exports the fully signed production IPA package using our custom ExportOptions plist.
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
-            --scheme App
+            --scheme App \
+            --export-options-plist /tmp/ExportOptions.plist
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
