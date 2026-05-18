@@ -9,7 +9,7 @@ workflows:
     integrations:
       # Replace this with the exact "Name" or "Label" of your App Store Connect 
       # API Key integration as shown in your Codemagic UI (User Settings -> Integrations).
-      app_store_connect: arash-tajdar-dev
+      app_store_connect: tp
     environment:
       node: 22
       xcode: latest
