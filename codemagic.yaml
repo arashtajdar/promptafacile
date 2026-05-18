@@ -33,8 +33,9 @@ workflows:
       - name: Fetch Apple Signing Profiles
         script: |
           # Automatically downloads signing certificates and provisioning profiles
-          # from your connected App Store Connect developer account
-          app-store-connect fetch-signing-files --platform IOS --type IOS_APP_STORE "com.teleprompter.app"
+          # from your connected App Store Connect developer account.
+          # The --create flag automatically generates a new certificate and private key in the cloud if needed.
+          app-store-connect fetch-signing-files --platform IOS --type IOS_APP_STORE --create "com.teleprompter.app"
       - name: Apply Signing Profiles to Xcode
         script: |
           # Modifies the Xcode project to use the fetched provisioning profile
