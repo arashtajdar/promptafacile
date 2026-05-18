@@ -32,6 +32,10 @@ workflows:
       - name: Capacitor Sync
         script: |
           npx cap sync ios
+      - name: Set Build Number
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
       - name: Create ExportOptions.plist
         script: |
           # Generates the exact Xcode export configuration for the app-store submission
