@@ -1,0 +1,45 @@
+# Codemagic CI/CD Configuration for Capacitor iOS Build
+# For details, see: https://docs.codemagic.io/yaml-basic/yaml-getting-started/
+
+workflows:
+  ios-build:
+    name: iOS Capacitor App Build
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      node: 20
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Install Node Dependencies
+        script: |
+          npm ci
+      - name: Compile Web Assets
+        script: |
+          npm run build
+      - name: Capacitor Sync
+        script: |
+          npx cap sync ios
+      - name: CocoaPods Install
+        script: |
+          cd ios/App && pod install
+      - name: Build iOS IPA
+        script: |
+          # Note: If you have connected your Apple developer account in Codemagic dashboard,
+          # it will automatically sign the build. Otherwise, this command builds the Xcode project.
+          xcode-project build-ipa \
+            --workspace ios/App/App.xcworkspace \
+            --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - arash.tajdar@gmail.com
+        allowed_to_fail: true
