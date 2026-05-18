@@ -32,23 +32,11 @@ workflows:
       - name: Capacitor Sync
         script: |
           npx cap sync ios
-      - name: Install Code-Signing Credentials
-        script: |
-          # Create standard Mac provisioning directory
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          
-          # Decode the profile base64 string to a mobileprovision file
-          echo $CM_PROVISIONING_PROFILE | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/tp_profile.mobileprovision
-          
-          # Decode the certificate p12 base64 string to a temporary p12 file
-          echo $CM_CERTIFICATE | base64 --decode > /tmp/ios.p12
-          
-          # Initialize keychain and import the certificate
-          keychain initialize
-          keychain add-certificates --pkcs12 /tmp/ios.p12
       - name: Build Code-Signed iOS IPA
         script: |
           # Compiles and exports the fully signed production IPA package.
+          # Codemagic automatically detects the CM_CERTIFICATE and CM_PROVISIONING_PROFILE
+          # environment variables and installs them into the keychain beforehand!
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme App
