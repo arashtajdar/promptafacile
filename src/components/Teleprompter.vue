@@ -63,6 +63,7 @@ onUpdated(() => {
   background: black;
   display: flex;
   justify-content: center;
+  z-index: 1;
 }
 
 .teleprompter-container.camera-active {
@@ -74,6 +75,7 @@ onUpdated(() => {
   max-width: 900px;
   will-change: transform;
   padding: 50vh 20px; /* Start text from middle of screen */
+  z-index: 2;
 }
 
 .script-content {

@@ -78,10 +78,7 @@ export function useCamera() {
     try {
       await CameraPreview.start({
         position: 'front',
-        parent: 'app',
-        className: 'camera-preview',
-        toBack: true, // Crucial for overlaying web UI
-        transparent: true
+        toBack: true // Crucial for overlaying web UI behind the WebView
       })
       isCameraActive.value = true
     } catch (e) {
