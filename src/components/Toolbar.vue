@@ -52,9 +52,6 @@
         <button @click="toggleFullscreen" class="btn icon-btn" title="Toggle Fullscreen">
           <Maximize :size="18" />
         </button>
-        <button @click="showDebugConsole = !showDebugConsole" class="btn icon-btn debug-toggle-btn" :class="{ active: showDebugConsole }" title="Show Debug Logs">
-          <Bug :size="18" />
-        </button>
         <button v-if="!isEditorMode" @click="isManuallyHidden = true" class="btn icon-btn" title="Hide Controls">
           <EyeOff :size="18" />
         </button>
@@ -71,7 +68,7 @@
 
 <script setup>
 import { inject, ref, watch } from 'vue'
-import { Play, Pause, RotateCcw, Gauge, Type, AlignJustify, FlipHorizontal, Edit3, MonitorPlay, Maximize, Eye, EyeOff, Camera, Circle, Square, Bug } from 'lucide-vue-next'
+import { Play, Pause, RotateCcw, Gauge, Type, AlignJustify, FlipHorizontal, Edit3, MonitorPlay, Maximize, Eye, EyeOff, Camera, Circle, Square } from 'lucide-vue-next'
 
 const { settings } = inject('settings')
 const isPlaying = inject('isPlaying')
