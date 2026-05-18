@@ -21,6 +21,10 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html.camera-active, html.camera-active body, html.camera-active #app {
+  background: transparent !important;
+}
+
 #app {
   width: 100%;
   height: 100%;

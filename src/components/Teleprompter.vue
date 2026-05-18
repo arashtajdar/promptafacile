@@ -1,5 +1,5 @@
 <template>
-  <div class="teleprompter-container">
+  <div class="teleprompter-container" :class="{ 'camera-active': settings.cameraEnabled }">
     <div 
       class="scroll-area" 
       :style="{ transform: `translateY(-${scrollY}px)` }"
@@ -63,6 +63,10 @@ onUpdated(() => {
   background: black;
   display: flex;
   justify-content: center;
+}
+
+.teleprompter-container.camera-active {
+  background: transparent;
 }
 
 .scroll-area {

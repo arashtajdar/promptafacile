@@ -6,6 +6,7 @@ const defaultSettings = {
   fontSize: 60, // 20px to 120px
   lineHeight: 1.5, // 1.0 to 3.0
   mirrorMode: false,
+  cameraEnabled: false,
   lastScrollPosition: 0
 }
 

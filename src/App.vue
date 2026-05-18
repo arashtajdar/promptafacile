@@ -19,9 +19,29 @@ import Teleprompter from './components/Teleprompter.vue'
 import Toolbar from './components/Toolbar.vue'
 import { useSettings } from './composables/useSettings'
 import { useScroll } from './composables/useScroll'
+import { useCamera } from './composables/useCamera'
 
 const { settings } = useSettings()
 const scroll = useScroll(settings)
+const camera = useCamera()
+
+// Watch cameraEnabled setting to start/stop native camera
+watch(() => settings.value.cameraEnabled, async (enabled) => {
+  document.documentElement.classList.toggle('camera-active', enabled)
+  if (enabled) {
+    await camera.startCamera()
+  } else {
+    await camera.stopCamera()
+  }
+})
+
+// Stop camera when unmounting
+onUnmounted(() => {
+  if (settings.value.cameraEnabled) {
+    document.documentElement.classList.remove('camera-active')
+    camera.stopCamera()
+  }
+})
 
 // Mode state
 const isEditorMode = ref(true)
@@ -36,6 +56,11 @@ provide('togglePlay', scroll.toggle)
 provide('reset', scroll.reset)
 provide('scrollY', scroll.scrollY)
 provide('maxScroll', scroll.maxScroll)
+
+// Provide camera state
+provide('isRecording', camera.isRecording)
+provide('startRecording', camera.startRecording)
+provide('stopRecording', camera.stopRecording)
 
 // Auto-hide toolbar logic
 const hideToolbar = ref(false)

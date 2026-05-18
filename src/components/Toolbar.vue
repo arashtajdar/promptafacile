@@ -3,6 +3,10 @@
     <div class="toolbar" v-if="!isManuallyHidden">
       <div class="controls-group left-group">
         <template v-if="!isEditorMode">
+          <button v-if="settings.cameraEnabled" @click="isRecording ? stopRecording() : startRecording()" class="btn icon-btn record-btn" :class="{ 'is-recording': isRecording }" :title="isRecording ? 'Stop Recording' : 'Start Recording'">
+            <Square v-if="isRecording" :size="16" fill="currentColor" />
+            <Circle v-else :size="16" fill="currentColor" />
+          </button>
           <button @click="togglePlay" class="primary-btn icon-btn" :title="isPlaying ? 'Pause' : 'Play'">
             <Pause v-if="isPlaying" :size="20" />
             <Play v-else :size="20" />
@@ -35,6 +39,9 @@
       </div>
 
       <div class="controls-group right-group">
+        <button @click="settings.cameraEnabled = !settings.cameraEnabled" class="btn icon-btn" :class="{ active: settings.cameraEnabled }" title="Toggle Camera">
+          <Camera :size="18" />
+        </button>
         <button @click="settings.mirrorMode = !settings.mirrorMode" class="btn icon-btn" :class="{ active: settings.mirrorMode }" title="Mirror Text">
           <FlipHorizontal :size="18" />
         </button>
@@ -61,12 +68,16 @@
 
 <script setup>
 import { inject, ref, watch } from 'vue'
-import { Play, Pause, RotateCcw, Gauge, Type, AlignJustify, FlipHorizontal, Edit3, MonitorPlay, Maximize, Eye, EyeOff } from 'lucide-vue-next'
+import { Play, Pause, RotateCcw, Gauge, Type, AlignJustify, FlipHorizontal, Edit3, MonitorPlay, Maximize, Eye, EyeOff, Camera, Circle, Square } from 'lucide-vue-next'
 
 const { settings } = inject('settings')
 const isPlaying = inject('isPlaying')
 const togglePlay = inject('togglePlay')
 const reset = inject('reset')
+
+const isRecording = inject('isRecording')
+const startRecording = inject('startRecording')
+const stopRecording = inject('stopRecording')
 
 const isEditorMode = inject('isEditorMode')
 const setIsEditorMode = inject('setIsEditorMode')
@@ -257,6 +268,20 @@ const toggleFullscreen = () => {
 .primary-btn:hover {
   background: linear-gradient(135deg, #60a5fa, #3b82f6);
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.record-btn {
+  color: #ef4444;
+}
+.record-btn.is-recording {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  animation: pulse-record 2s infinite;
+}
+@keyframes pulse-record {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
 @media (max-width: 768px) {
