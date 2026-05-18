@@ -27,3 +27,7 @@ dist-ssr
 *.key
 *.csr
 *.p12
+*.pem
+*.txt
+
+
