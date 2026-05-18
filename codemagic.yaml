@@ -30,19 +30,10 @@ workflows:
       - name: Capacitor Sync
         script: |
           npx cap sync ios
-      - name: Fetch Apple Signing Profiles
-        script: |
-          # Automatically downloads signing certificates and provisioning profiles
-          # from your connected App Store Connect developer account.
-          # The --create flag automatically generates a new certificate and private key in the cloud if needed.
-          app-store-connect fetch-signing-files --platform IOS --type IOS_APP_STORE --create "com.teleprompter.app"
-      - name: Apply Signing Profiles to Xcode
-        script: |
-          # Modifies the Xcode project to use the fetched provisioning profile
-          xcode-project use-profiles
       - name: Build Code-Signed iOS IPA
         script: |
-          # Compiles and exports a fully signed production IPA package
+          # Compiles and exports the fully signed production IPA package.
+          # Make sure to enable "Automatic Code Signing" in the Codemagic UI!
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme App
