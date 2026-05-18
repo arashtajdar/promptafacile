@@ -56,6 +56,9 @@ workflows:
           EOF
       - name: Build Code-Signed iOS IPA
         script: |
+          # Apply the imported provisioning profiles directly into the Xcode project
+          xcode-project use-profiles
+          
           # Compiles and exports the fully signed production IPA package using our custom ExportOptions plist.
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
