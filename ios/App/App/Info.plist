@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to the camera to record video in the Teleprompter app.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need microphone access to capture audio together with the video.</string>
 </dict>
 </plist>
