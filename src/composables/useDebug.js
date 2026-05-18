@@ -8,11 +8,25 @@ const originalLog = console.log
 const originalError = console.error
 const originalWarn = console.warn
 
+const formatArg = (a) => {
+  if (a instanceof Error) {
+    return `${a.name}: ${a.message}${a.stack ? '\n' + a.stack : ''}`
+  }
+  if (typeof a === 'object' && a !== null) {
+    try {
+      return JSON.stringify(a)
+    } catch (err) {
+      return '[Circular Object]'
+    }
+  }
+  return String(a)
+}
+
 console.log = (...args) => {
   originalLog.apply(console, args)
   logs.value.push({
     type: 'log',
-    message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '),
+    message: args.map(formatArg).join(' '),
     time: new Date().toLocaleTimeString()
   })
 }
@@ -21,7 +35,7 @@ console.error = (...args) => {
   originalError.apply(console, args)
   logs.value.push({
     type: 'error',
-    message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '),
+    message: args.map(formatArg).join(' '),
     time: new Date().toLocaleTimeString()
   })
 }
@@ -30,7 +44,7 @@ console.warn = (...args) => {
   originalWarn.apply(console, args)
   logs.value.push({
     type: 'warn',
-    message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '),
+    message: args.map(formatArg).join(' '),
     time: new Date().toLocaleTimeString()
   })
 }
