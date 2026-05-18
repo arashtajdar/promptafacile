@@ -59,11 +59,16 @@ workflows:
           # Apply the imported provisioning profiles directly into the Xcode project
           xcode-project use-profiles
           
-          # Compiles and exports the fully signed production IPA package using our custom ExportOptions plist.
+          # Compiles and exports the fully signed production IPA package.
+          # We explicitly pass the provisioning profile details to xcodebuild to bypass all Xcode signing bugs!
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme App \
-            --export-options-plist /tmp/ExportOptions.plist
+            --export-options-plist /tmp/ExportOptions.plist \
+            PROVISIONING_PROFILE="f1d658d3-f218-460e-9f7b-c7df36dd3457" \
+            PROVISIONING_PROFILE_SPECIFIER="tp profile" \
+            DEVELOPMENT_TEAM="ND24U8LL54" \
+            CODE_SIGN_IDENTITY="Apple Distribution"
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
