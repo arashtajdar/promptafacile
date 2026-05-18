@@ -14,9 +14,8 @@ workflows:
       node: 22
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.promptafacile.teleprompter
+      groups:
+        - ios-credentials
     triggering:
       events:
         - push
@@ -33,10 +32,23 @@ workflows:
       - name: Capacitor Sync
         script: |
           npx cap sync ios
+      - name: Install Code-Signing Credentials
+        script: |
+          # Create standard Mac provisioning directory
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          
+          # Decode the profile base64 string to a mobileprovision file
+          echo $CM_PROVISIONING_PROFILE | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/tp_profile.mobileprovision
+          
+          # Decode the certificate p12 base64 string to a temporary p12 file
+          echo $CM_CERTIFICATE | base64 --decode > /tmp/ios.p12
+          
+          # Initialize keychain and import the certificate
+          keychain initialize
+          keychain add-certificates --certificates /tmp/ios.p12
       - name: Build Code-Signed iOS IPA
         script: |
           # Compiles and exports the fully signed production IPA package.
-          # Make sure to enable "Automatic Code Signing" in the Codemagic UI!
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme App
