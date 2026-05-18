@@ -41,14 +41,22 @@ export function useCamera() {
         if (!video) {
           video = document.createElement('video')
           video.id = 'web-camera-preview'
+          video.setAttribute('autoplay', '')
+          video.setAttribute('playsinline', '')
+          video.setAttribute('muted', '')
           video.style.position = 'fixed'
-          video.style.top = '0'
-          video.style.left = '0'
-          video.style.width = '100vw'
-          video.style.height = '100vh'
+          video.style.top = '50%'
+          video.style.left = '50%'
+          video.style.transform = 'translate(-50%, -50%) scaleX(-1)' // Center and mirror
+          video.style.width = '90vw'
+          video.style.height = '75vh'
+          video.style.maxWidth = '480px'
+          video.style.maxHeight = '720px'
           video.style.objectFit = 'cover'
-          video.style.zIndex = '-1'
-          video.style.transform = 'scaleX(-1)' // Mirror front camera preview
+          video.style.borderRadius = '24px'
+          video.style.border = '3px solid rgba(255, 255, 255, 0.15)'
+          video.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
+          video.style.zIndex = '0' // Float above the dark body background, behind scrolling text
           video.style.pointerEvents = 'none'
           video.autoplay = true
           video.playsInline = true

@@ -27,6 +27,16 @@
         <div v-if="logs.length === 0" class="no-logs">No logs recorded yet. Try turning on the camera to capture events.</div>
       </div>
     </div>
+
+    <!-- Floating Stop Recording button at the bottom -->
+    <button 
+      v-if="isRecording" 
+      @click="stopRecording" 
+      class="floating-stop-btn"
+    >
+      <span class="stop-icon-dot"></span>
+      <span>Stop Recording</span>
+    </button>
   </div>
 </template>
 
@@ -39,15 +49,21 @@ import { useSettings } from './composables/useSettings'
 import { useScroll } from './composables/useScroll'
 import { useCamera } from './composables/useCamera'
 import { useDebug } from './composables/useDebug'
+import { Capacitor } from '@capacitor/core'
 
 const { settings } = useSettings()
 const scroll = useScroll(settings)
 const camera = useCamera()
 const { logs, showDebugConsole, clearLogs } = useDebug()
 
+const isRecording = camera.isRecording
+const stopRecording = camera.stopRecording
+
 // Watch cameraEnabled setting to start/stop native camera
 watch(() => settings.value.cameraEnabled, async (enabled) => {
-  document.documentElement.classList.toggle('camera-active', enabled)
+  if (Capacitor.isNative) {
+    document.documentElement.classList.toggle('camera-active', enabled)
+  }
   if (enabled) {
     isEditorMode.value = false // Transition to prompter mode automatically
     await camera.startCamera()
@@ -59,7 +75,9 @@ watch(() => settings.value.cameraEnabled, async (enabled) => {
 // Stop camera when unmounting
 onUnmounted(() => {
   if (settings.value.cameraEnabled) {
-    document.documentElement.classList.remove('camera-active')
+    if (Capacitor.isNative) {
+      document.documentElement.classList.remove('camera-active')
+    }
     camera.stopCamera()
   }
 })
@@ -268,5 +286,72 @@ onUnmounted(() => {
   text-align: center;
   padding: 20px;
   font-style: italic;
+}
+
+/* Floating Stop Recording Button Styles */
+.floating-stop-btn {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(239, 68, 68, 0.5);
+  padding: 12px 28px;
+  border-radius: 50px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.5px;
+}
+
+.floating-stop-btn:hover {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: rgba(239, 68, 68, 0.7);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 15px 35px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.floating-stop-btn:active {
+  transform: translateX(-50%) translateY(1px);
+}
+
+.stop-icon-dot {
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  position: relative;
+}
+
+.stop-icon-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid #ef4444;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite ease-out;
+}
+
+@keyframes pulse-dot {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }
 </style>
