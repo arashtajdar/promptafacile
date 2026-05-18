@@ -42,4 +42,3 @@ workflows:
       email:
         recipients:
           - arash.tajdar@gmail.com
-        allowed_to_fail: true
