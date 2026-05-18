@@ -45,7 +45,7 @@ workflows:
           
           # Initialize keychain and import the certificate
           keychain initialize
-          keychain add-certificates --certificates /tmp/ios.p12
+          keychain add-certificates --pkcs12 /tmp/ios.p12
       - name: Build Code-Signed iOS IPA
         script: |
           # Compiles and exports the fully signed production IPA package.
