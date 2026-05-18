@@ -16,6 +16,10 @@ export function useCamera() {
     if (!Capacitor.isNative()) {
       // Web fallback
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Web Camera API (navigator.mediaDevices.getUserMedia) is undefined. Camera access REQUIRES a secure connection (HTTPS) or localhost. Please verify your Railway deployment is using HTTPS and camera permissions are granted in Safari settings.')
+        }
+
         let stream
         try {
           // Attempt front camera by preference and ask for both audio and video
