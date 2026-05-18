@@ -13,7 +13,7 @@ export function useCamera() {
   let recordedChunks = []
 
   const startCamera = async () => {
-    if (!Capacitor.isNative()) {
+    if (!Capacitor.isNative) {
       // Web fallback
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -82,7 +82,7 @@ export function useCamera() {
   }
 
   const stopCamera = async () => {
-    if (!Capacitor.isNative()) {
+    if (!Capacitor.isNative) {
       // Web fallback
       try {
         if (isRecording.value) {
@@ -116,7 +116,7 @@ export function useCamera() {
   }
 
   const startRecording = async () => {
-    if (!Capacitor.isNative()) {
+    if (!Capacitor.isNative) {
       // Web fallback MediaRecorder recording
       if (!webStream) {
         console.error('No camera stream found to record')
@@ -193,7 +193,7 @@ export function useCamera() {
   }
 
   const stopRecording = async () => {
-    if (!Capacitor.isNative()) {
+    if (!Capacitor.isNative) {
       // Web fallback
       try {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
