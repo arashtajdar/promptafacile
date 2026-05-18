@@ -29,6 +29,7 @@ const camera = useCamera()
 watch(() => settings.value.cameraEnabled, async (enabled) => {
   document.documentElement.classList.toggle('camera-active', enabled)
   if (enabled) {
+    isEditorMode.value = false // Transition to prompter mode automatically
     await camera.startCamera()
   } else {
     await camera.stopCamera()

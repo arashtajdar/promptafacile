@@ -80,6 +80,7 @@ onUpdated(() => {
   color: white;
   white-space: pre-wrap;
   text-align: left;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 0, 0, 0.6);
 }
 
 .script-content p {
