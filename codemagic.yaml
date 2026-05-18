@@ -31,7 +31,7 @@ workflows:
           # Note: If you have connected your Apple developer account in Codemagic dashboard,
           # it will automatically sign the build. Otherwise, this command builds the Xcode project.
           xcode-project build-ipa \
-            --workspace ios/App/App.xcworkspace \
+            --project ios/App/App.xcodeproj \
             --scheme App
     artifacts:
       - build/ios/ipa/*.ipa
