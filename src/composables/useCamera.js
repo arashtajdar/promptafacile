@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { CameraPreview } from '@capacitor-community/camera-preview'
 import { Capacitor } from '@capacitor/core'
 import { Share } from '@capacitor/share'
+import { Media } from '@capacitor-community/media'
 
 export function useCamera() {
   const isRecording = ref(false)
@@ -223,13 +224,23 @@ export function useCamera() {
         if (!filePath.startsWith('file://')) {
           filePath = 'file://' + filePath
         }
-        // Automatically open native Share sheet to allow "Save Video" to Gallery or direct sharing
-        await Share.share({
-          title: 'PromptaFacile Recording',
-          text: 'Here is your recorded teleprompter video!',
-          files: [filePath],
-          dialogTitle: 'Save or Share Video'
-        })
+        
+        try {
+          // Attempt to save the video directly to the iOS/Android Photos gallery
+          await Media.saveVideo({
+            path: filePath
+          })
+          alert('Video successfully saved to your Photos gallery!')
+        } catch (mediaError) {
+          console.error('Failed to save to Photos gallery directly, falling back to Share sheet:', mediaError)
+          // Fallback to native Share sheet to allow manual saving
+          await Share.share({
+            title: 'PromptaFacile Recording',
+            text: 'Here is your recorded teleprompter video!',
+            files: [filePath],
+            dialogTitle: 'Save or Share Video'
+          })
+        }
       }
     } catch (e) {
       console.error('Failed to stop native recording', e)
