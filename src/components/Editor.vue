@@ -7,12 +7,21 @@
         class="script-editor"
       ></textarea>
     </div>
+    <footer class="editor-footer">
+      <span class="app-version">Teleprompter v1.0.0</span>
+      <button @click="openPrivacy" class="footer-link">Privacy Policy</button>
+    </footer>
   </div>
 </template>
 
 <script setup>
 import { inject } from 'vue'
 const { settings } = inject('settings')
+const showPrivacy = inject('showPrivacy')
+
+const openPrivacy = () => {
+  showPrivacy.value = true
+}
 </script>
 
 <style scoped>
@@ -62,6 +71,34 @@ const { settings } = inject('settings')
   color: #52525b;
 }
 
+.editor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 0 8px;
+  font-size: 0.85rem;
+}
+
+.app-version {
+  color: #52525b;
+}
+
+.footer-link {
+  background: none;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #a1a1aa;
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .editor-container {
     padding: 16px;
@@ -69,6 +106,10 @@ const { settings } = inject('settings')
   .script-editor {
     font-size: 1.1rem;
     padding: 16px;
+  }
+  .editor-footer {
+    margin-top: 12px;
+    padding: 0 4px;
   }
 }
 </style>

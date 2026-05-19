@@ -4,10 +4,13 @@
     @mousemove="onMouseMove" 
     @touchstart="onMouseMove"
   >
-    <Toolbar />
-    <div class="main-content">
-      <Editor v-if="isEditorMode" />
-      <Teleprompter v-else />
+    <Toolbar v-if="!showPrivacy" />
+    <div class="main-content" :class="{ 'privacy-view': showPrivacy }">
+      <PrivacyPolicy v-if="showPrivacy" />
+      <template v-else>
+        <Editor v-if="isEditorMode" />
+        <Teleprompter v-else />
+      </template>
     </div>
 
     <!-- On-screen debugger panel for mobile Safari/PWA testing -->
@@ -45,6 +48,7 @@ import { ref, provide, computed, onMounted, onUnmounted, watch } from 'vue'
 import Editor from './components/Editor.vue'
 import Teleprompter from './components/Teleprompter.vue'
 import Toolbar from './components/Toolbar.vue'
+import PrivacyPolicy from './components/PrivacyPolicy.vue'
 import { useSettings } from './composables/useSettings'
 import { useScroll } from './composables/useScroll'
 import { useCamera } from './composables/useCamera'
@@ -84,11 +88,13 @@ onUnmounted(() => {
 
 // Mode state
 const isEditorMode = ref(true)
+const showPrivacy = ref(false)
 
 // Provide state to components
 provide('settings', { settings })
 provide('isEditorMode', isEditorMode)
 provide('setIsEditorMode', (val) => isEditorMode.value = val)
+provide('showPrivacy', showPrivacy)
 
 provide('isPlaying', scroll.isPlaying)
 provide('togglePlay', scroll.toggle)
@@ -132,8 +138,9 @@ provide('hideToolbar', hideToolbar)
 
 // Keyboard shortcuts
 const onKeyDown = (e) => {
-  // Don't trigger shortcuts if user is typing in textarea
+  // Don't trigger shortcuts if user is typing in textarea or viewing privacy policy
   if (e.target.tagName.toLowerCase() === 'textarea') return
+  if (showPrivacy.value) return
 
   switch(e.key.toLowerCase()) {
     case ' ':
@@ -195,6 +202,10 @@ onUnmounted(() => {
   flex-direction: column;
   padding-top: calc(env(safe-area-inset-top) + 60px); /* Space for toolbar */
   height: 100%;
+}
+
+.main-content.privacy-view {
+  padding-top: env(safe-area-inset-top);
 }
 
 /* On-Screen Debug Console Styles */
