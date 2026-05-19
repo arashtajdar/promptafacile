@@ -120,39 +120,56 @@ if (fs.existsSync(controllerPath)) {
 
         captureSession.beginConfiguration()
 
-        let preset: AVCaptureSession.Preset
-        switch resolution.lowercased() {
-        case "4k":
-            preset = .hd4K3840x2160
-        case "720p":
-            preset = .hd1280x720
-        case "1080p":
-            fallthrough
-        default:
-            preset = .hd1920x1080
-        }
-
-        if captureSession.canSetSessionPreset(preset) {
-            captureSession.sessionPreset = preset
+        if captureSession.canSetSessionPreset(.inputPriority) {
+            captureSession.sessionPreset = .inputPriority
         }
 
         try device.lockForConfiguration()
 
-        var selectedFormat: AVCaptureDevice.Format? = nil
-        let formats = device.formats
-        for format in formats {
-            let ranges = format.videoSupportedFrameRateRanges
-            for range in ranges {
+        let targetWidth: Int
+        let targetHeight: Int
+        switch resolution.lowercased() {
+        case "4k":
+            targetWidth = 3840
+            targetHeight = 2160
+        case "720p":
+            targetWidth = 1280
+            targetHeight = 720
+        default:
+            targetWidth = 1920
+            targetHeight = 1080
+        }
+
+        var bestFormat: AVCaptureDevice.Format? = nil
+        var bestDiff: Int = Int.max
+
+        for format in device.formats {
+            var supportsFPS = false
+            for range in format.videoSupportedFrameRateRanges {
                 if range.maxFrameRate >= Double(fps) && range.minFrameRate <= Double(fps) {
-                    selectedFormat = format
+                    supportsFPS = true
                     break
                 }
             }
-            if selectedFormat != nil { break }
+            
+            if supportsFPS {
+                let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+                let width = Int(dimensions.width)
+                let height = Int(dimensions.height)
+                let diff = abs(width - targetWidth) + abs(height - targetHeight)
+                if diff < bestDiff {
+                    bestDiff = diff
+                    bestFormat = format
+                }
+            }
         }
 
-        if let format = selectedFormat {
+        if let format = bestFormat {
             device.activeFormat = format
+            let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            print("Selected format resolution: \\(dimensions.width)x\\(dimensions.height)")
+        } else {
+            print("No matching format found for resolution \\(resolution) and FPS \\(fps)")
         }
 
         let frameDuration = CMTime(value: 1, timescale: Int32(fps))
