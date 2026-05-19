@@ -49,7 +49,7 @@
           <MonitorPlay v-if="isEditorMode" :size="18" />
           <Edit3 v-else :size="18" />
         </button>
-        <button @click="toggleFullscreen" class="btn icon-btn" title="Toggle Fullscreen">
+        <button v-if="!isIos" @click="toggleFullscreen" class="btn icon-btn" title="Toggle Fullscreen">
           <Maximize :size="18" />
         </button>
         <button v-if="!isEditorMode" @click="isManuallyHidden = true" class="btn icon-btn" title="Hide Controls">
@@ -69,6 +69,9 @@
 <script setup>
 import { inject, ref, watch } from 'vue'
 import { Play, Pause, RotateCcw, Gauge, Type, AlignJustify, FlipHorizontal, Edit3, MonitorPlay, Maximize, Eye, EyeOff, Camera, Circle, Square } from 'lucide-vue-next'
+import { Capacitor } from '@capacitor/core'
+
+const isIos = Capacitor.getPlatform() === 'ios'
 
 const { settings } = inject('settings')
 const isPlaying = inject('isPlaying')

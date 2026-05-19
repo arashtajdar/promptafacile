@@ -175,6 +175,10 @@ if (fs.existsSync(controllerPath)) {
       content = content.substring(0, startIdx) + `extension CameraController: AVCaptureFileOutputRecordingDelegate {
     public func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         if error == nil {
+            let pathString = outputFileURL.path
+            if UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(pathString) {
+                UISaveVideoAtPathToSavedPhotosAlbum(pathString, nil, nil, nil)
+            }
             self.videoRecordCompletionBlock?(outputFileURL, nil)
         } else {
             self.videoRecordCompletionBlock?(outputFileURL, error)

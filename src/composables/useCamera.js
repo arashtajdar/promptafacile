@@ -9,6 +9,7 @@ export function useCamera() {
   const isCameraActive = ref(false)
   const currentResolution = ref('1080p')
   const currentFPS = ref(30)
+  const saveStatusLog = ref('')
 
   // Web fallback states
   let webStream = null
@@ -243,41 +244,46 @@ export function useCamera() {
 
     // Native Capacitor logic
     try {
+      saveStatusLog.value = 'Stopping recording natively...'
       const result = await CameraPreview.stopRecordVideo()
       isRecording.value = false
       
-      console.log('Video saved to:', result.videoFilePath)
+      saveStatusLog.value = `Stop completed. Native path: ${result?.videoFilePath}`
+      console.log('Video saved to:', result?.videoFilePath)
       if (result && result.videoFilePath) {
-        let filePath = result.videoFilePath
-        if (!filePath.startsWith('file://')) {
-          filePath = 'file://' + filePath
-        }
-        
-        try {
-          // Request Photos permission first
+        if (Capacitor.getPlatform() === 'android') {
           try {
+            saveStatusLog.value = 'Requesting Android permissions...'
             await Media.requestPermissions()
-          } catch (permError) {
-            console.warn('Could not request permissions:', permError)
+            saveStatusLog.value = 'Saving to Android gallery...'
+            await Media.saveVideo({
+              path: result.videoFilePath
+            })
+            saveStatusLog.value = `Successfully saved to Android gallery! File: ${result.videoFilePath}`
+          } catch (androidSaveError) {
+            saveStatusLog.value = `Android save failed: ${androidSaveError.message || androidSaveError}. Falling back to Share.`
+            let filePath = result.videoFilePath
+            if (!filePath.startsWith('file://')) {
+              filePath = 'file://' + filePath
+            }
+            await Share.share({
+              title: 'PromptaFacile Recording',
+              text: 'Here is your recorded teleprompter video!',
+              files: [filePath],
+              dialogTitle: 'Save or Share Video'
+            })
+            return
           }
-
-          // Attempt to save the video directly to the iOS/Android Photos gallery
-          await Media.saveVideo({
-            path: filePath
-          })
-          alert('Video successfully saved to your Photos gallery!')
-        } catch (mediaError) {
-          console.error('Failed to save to Photos gallery directly, falling back to Share sheet:', mediaError)
-          // Fallback to native Share sheet to allow manual saving
-          await Share.share({
-            title: 'PromptaFacile Recording',
-            text: 'Here is your recorded teleprompter video!',
-            files: [filePath],
-            dialogTitle: 'Save or Share Video'
-          })
+        } else {
+          // On iOS
+          saveStatusLog.value = `Saved on iOS. Natively saved via UISaveVideoAtPathToSavedPhotosAlbum to Photos Library. Temp path: ${result.videoFilePath}`
         }
+        alert('Video successfully saved to your Photos gallery!')
+      } else {
+        saveStatusLog.value = 'Error: No videoFilePath returned from CameraPreview.stopRecordVideo()'
       }
     } catch (e) {
+      saveStatusLog.value = `Recording stop failed: ${e.message || e}`
       console.error('Failed to stop native recording', e)
       isRecording.value = false
     }
@@ -346,6 +352,7 @@ export function useCamera() {
     isRecording,
     currentResolution,
     currentFPS,
+    saveStatusLog,
     startCamera,
     stopCamera,
     startRecording,

@@ -60,6 +60,15 @@
       <span class="timer-dot"></span>
       <span class="timer-text">{{ formattedTime }}</span>
     </div>
+
+    <!-- Video Save Status Display for copying -->
+    <div v-if="saveStatusLog" class="save-status-display">
+      <div class="save-status-header">
+        <span>Video Saving Log</span>
+        <button @click="copySaveStatus" class="copy-btn">Copy</button>
+      </div>
+      <div class="save-status-content">{{ saveStatusLog }}</div>
+    </div>
   </div>
 </template>
 
@@ -85,6 +94,14 @@ const stopRecording = camera.stopRecording
 const currentResolution = camera.currentResolution
 const currentFPS = camera.currentFPS
 const setResolutionAndFrameRate = camera.setResolutionAndFrameRate
+const saveStatusLog = camera.saveStatusLog
+
+const copySaveStatus = () => {
+  if (saveStatusLog.value) {
+    navigator.clipboard.writeText(saveStatusLog.value)
+    alert('Log copied to clipboard!')
+  }
+}
 
 // Watch cameraEnabled setting to start/stop native camera
 watch(() => settings.value.cameraEnabled, async (enabled) => {
@@ -172,28 +189,10 @@ provide('showDebugConsole', showDebugConsole)
 provide('logs', logs)
 provide('clearLogs', clearLogs)
 
-// Auto-hide toolbar logic
+// Auto-hide toolbar logic (disabled - manual control via hide button only)
 const hideToolbar = ref(false)
-let hideTimeout = null
-
-const resetHideTimer = () => {
-  hideToolbar.value = false
-  if (hideTimeout) clearTimeout(hideTimeout)
-  
-  if (!isEditorMode.value && scroll.isPlaying.value) {
-    hideTimeout = setTimeout(() => {
-      hideToolbar.value = true
-    }, 2500)
-  }
-}
-
-const onMouseMove = () => {
-  resetHideTimer()
-}
-
-watch([scroll.isPlaying, isEditorMode], () => {
-  resetHideTimer()
-})
+const resetHideTimer = () => {}
+const onMouseMove = () => {}
 provide('hideToolbar', hideToolbar)
 
 // Recording Timer State & Controls
@@ -224,10 +223,8 @@ const stopTimer = () => {
 watch(isRecording, (recording) => {
   if (recording) {
     startTimer()
-    hideToolbar.value = true // Immediately hide controls during recording
   } else {
     stopTimer()
-    hideToolbar.value = false // Restore controls
   }
 })
 
@@ -577,5 +574,62 @@ onUnmounted(() => {
     transform: translate(-50%, 0);
     opacity: 1;
   }
+}
+
+/* Video Save Status Panel */
+.save-status-display {
+  position: fixed;
+  bottom: 80px;
+  left: 20px;
+  right: 20px;
+  background: rgba(18, 18, 23, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  z-index: 10002;
+  color: #fff;
+  font-family: monospace;
+  font-size: 0.8rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.save-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.copy-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.save-status-content {
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 80px;
+  overflow-y: auto;
+  line-height: 1.4;
 }
 </style>
