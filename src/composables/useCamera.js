@@ -219,11 +219,15 @@ export function useCamera() {
       
       console.log('Video saved to:', result.videoFilePath)
       if (result && result.videoFilePath) {
+        let filePath = result.videoFilePath
+        if (!filePath.startsWith('file://')) {
+          filePath = 'file://' + filePath
+        }
         // Automatically open native Share sheet to allow "Save Video" to Gallery or direct sharing
         await Share.share({
           title: 'PromptaFacile Recording',
           text: 'Here is your recorded teleprompter video!',
-          url: result.videoFilePath,
+          files: [filePath],
           dialogTitle: 'Save or Share Video'
         })
       }

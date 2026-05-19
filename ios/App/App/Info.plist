@@ -51,5 +51,9 @@
 	<string>We need access to the camera to record video in the Teleprompter app.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need microphone access to capture audio together with the video.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to let you view and share your recorded videos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need permission to save recorded videos to your photo library.</string>
 </dict>
 </plist>
