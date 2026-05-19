@@ -105,7 +105,7 @@ const copySaveStatus = () => {
 
 // Watch cameraEnabled setting to start/stop native camera
 watch(() => settings.value.cameraEnabled, async (enabled) => {
-  if (Capacitor.isNative) {
+  if (Capacitor.isNativePlatform()) {
     document.documentElement.classList.toggle('camera-active', enabled)
   }
   if (enabled) {
@@ -119,7 +119,7 @@ watch(() => settings.value.cameraEnabled, async (enabled) => {
 // Stop camera when unmounting
 onUnmounted(() => {
   if (settings.value.cameraEnabled) {
-    if (Capacitor.isNative) {
+    if (Capacitor.isNativePlatform()) {
       document.documentElement.classList.remove('camera-active')
     }
     camera.stopCamera()

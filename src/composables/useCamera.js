@@ -25,7 +25,7 @@ export function useCamera() {
 
   const startCamera = async () => {
     addLog('startCamera called')
-    if (!Capacitor.isNative) {
+    if (!Capacitor.isNativePlatform()) {
       // Web fallback
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -132,7 +132,7 @@ export function useCamera() {
 
   const stopCamera = async () => {
     addLog('stopCamera called')
-    if (!Capacitor.isNative) {
+    if (!Capacitor.isNativePlatform()) {
       // Web fallback
       try {
         if (isRecording.value) {
@@ -172,7 +172,7 @@ export function useCamera() {
 
   const startRecording = async () => {
     addLog('startRecording called')
-    if (!Capacitor.isNative) {
+    if (!Capacitor.isNativePlatform()) {
       // Web fallback MediaRecorder recording
       if (!webStream) {
         addLog('Error: No camera stream found to record')
@@ -261,7 +261,7 @@ export function useCamera() {
 
   const stopRecording = async () => {
     addLog('stopRecording called')
-    if (!Capacitor.isNative) {
+    if (!Capacitor.isNativePlatform()) {
       // Web fallback
       try {
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -328,7 +328,7 @@ export function useCamera() {
 
     if (!isCameraActive.value) return
 
-    if (Capacitor.isNative) {
+    if (Capacitor.isNativePlatform()) {
       try {
         await CameraPreview.setResolutionAndFrameRate({
           resolution,
