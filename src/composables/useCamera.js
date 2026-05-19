@@ -254,6 +254,13 @@ export function useCamera() {
         }
         
         try {
+          // Request Photos permission first
+          try {
+            await Media.requestPermissions()
+          } catch (permError) {
+            console.warn('Could not request permissions:', permError)
+          }
+
           // Attempt to save the video directly to the iOS/Android Photos gallery
           await Media.saveVideo({
             path: filePath
