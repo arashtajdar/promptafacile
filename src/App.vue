@@ -38,14 +38,48 @@
       class="bottom-camera-bar"
     >
       <!-- Resolution & FPS buttons on the left -->
-      <div v-if="!isRecording" class="camera-controls-left">
-        <button @click="toggleResolution" class="ios-camera-btn">
-          {{ currentResolution === '4k' ? '4K' : 'HD' }}
-        </button>
-        <span class="ios-camera-divider">|</span>
-        <button @click="toggleFPS" class="ios-camera-btn">
-          {{ currentFPS }}
-        </button>
+      <div v-if="!isRecording" class="camera-controls-left-wrapper">
+        <!-- Resolution Dropdown Menu -->
+        <Transition name="fade-menu">
+          <div v-if="showResolutionMenu" class="camera-menu resolution-menu">
+            <button 
+              v-for="res in ['4k', '1080p', '720p']" 
+              :key="res"
+              @click.stop="selectResolution(res)"
+              class="menu-item"
+              :class="{ active: currentResolution === res }"
+            >
+              <span class="menu-item-text">{{ res === '4k' ? '4K UHD' : (res === '720p' ? '720p SD' : '1080p HD') }}</span>
+              <svg v-if="currentResolution === res" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
+          </div>
+        </Transition>
+
+        <!-- FPS Dropdown Menu -->
+        <Transition name="fade-menu">
+          <div v-if="showFPSMenu" class="camera-menu fps-menu">
+            <button 
+              v-for="fps in [60, 30]" 
+              :key="fps"
+              @click.stop="selectFPS(fps)"
+              class="menu-item"
+              :class="{ active: currentFPS === fps }"
+            >
+              <span class="menu-item-text">{{ fps }} FPS</span>
+              <svg v-if="currentFPS === fps" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
+          </div>
+        </Transition>
+
+        <div class="camera-controls-left">
+          <button @click.stop="toggleResolutionMenu" class="ios-camera-btn" :class="{ 'menu-open': showResolutionMenu }">
+            {{ currentResolution === '4k' ? '4K' : (currentResolution === '720p' ? '720P' : 'HD') }}
+          </button>
+          <span class="ios-camera-divider">|</span>
+          <button @click.stop="toggleFPSMenu" class="ios-camera-btn" :class="{ 'menu-open': showFPSMenu }">
+            {{ currentFPS }}
+          </button>
+        </div>
       </div>
       <!-- Empty placeholder to balance flex layout when recording -->
       <div v-else class="camera-controls-left-placeholder"></div>
@@ -62,14 +96,12 @@
         </button>
       </div>
       
-      <!-- Right side placeholder for flex centering symmetry -->
-      <div class="camera-controls-right-placeholder"></div>
-    </div>
-
-    <!-- iOS style Recording Timer at the top center -->
-    <div v-if="isRecording" class="recording-timer">
-      <span class="timer-dot"></span>
-      <span class="timer-text">{{ formattedTime }}</span>
+      <!-- Right side: timer when recording, empty placeholder otherwise -->
+      <div v-if="isRecording" class="camera-controls-right recording-timer-inline">
+        <span class="timer-dot"></span>
+        <span class="timer-text">{{ formattedTime }}</span>
+      </div>
+      <div v-else class="camera-controls-right-placeholder"></div>
     </div>
 
     <!-- Toast Notification -->
@@ -105,6 +137,34 @@ const currentResolution = camera.currentResolution
 const currentFPS = camera.currentFPS
 const setResolutionAndFrameRate = camera.setResolutionAndFrameRate
 const startRecording = camera.startRecording
+
+const showResolutionMenu = ref(false)
+const showFPSMenu = ref(false)
+
+const toggleResolutionMenu = () => {
+  showResolutionMenu.value = !showResolutionMenu.value
+  showFPSMenu.value = false
+}
+
+const toggleFPSMenu = () => {
+  showFPSMenu.value = !showFPSMenu.value
+  showResolutionMenu.value = false
+}
+
+const selectResolution = async (res) => {
+  showResolutionMenu.value = false
+  await setResolutionAndFrameRate(res, currentFPS.value)
+}
+
+const selectFPS = async (fps) => {
+  showFPSMenu.value = false
+  await setResolutionAndFrameRate(currentResolution.value, fps)
+}
+
+const closeAllMenus = () => {
+  showResolutionMenu.value = false
+  showFPSMenu.value = false
+}
 
 // Toast Notification State & Controls
 const toast = ref({
@@ -167,9 +227,20 @@ watch(() => settings.value.cameraEnabled, async (enabled) => {
   }
   if (enabled) {
     isEditorMode.value = false // Transition to prompter mode automatically
-    await camera.startCamera()
+    showToastMsg('Camera loading...', 0, true)
+    try {
+      await camera.startCamera()
+      showToastMsg('Camera ready!', 2000, false)
+    } catch (e) {
+      console.error(e)
+      showToastMsg('Failed to start camera', 3000, false)
+    }
   } else {
     await camera.stopCamera()
+    // Hide toast if it was loading
+    if (toast.value.visible && toast.value.message === 'Camera loading...') {
+      toast.value.visible = false
+    }
   }
 })
 
@@ -342,6 +413,7 @@ const onKeyDown = (e) => {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('click', closeAllMenus)
   checkRoute()
   window.addEventListener('popstate', checkRoute)
   window.addEventListener('hashchange', checkRoute)
@@ -349,6 +421,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('click', closeAllMenus)
   window.removeEventListener('popstate', checkRoute)
   window.removeEventListener('hashchange', checkRoute)
   if (hideTimeout) clearTimeout(hideTimeout)
@@ -485,6 +558,11 @@ onUnmounted(() => {
   pointer-events: auto;
 }
 
+.camera-controls-left-wrapper {
+  position: relative;
+  pointer-events: auto;
+}
+
 .camera-controls-left {
   display: flex;
   align-items: center;
@@ -587,13 +665,88 @@ onUnmounted(() => {
   user-select: none;
 }
 
-/* iOS Style Recording Timer */
-.recording-timer {
-  position: fixed;
-  top: calc(env(safe-area-inset-top) + 80px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10001;
+.ios-camera-btn.menu-open {
+  color: #3b82f6;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* Dropdown Menu Styles */
+.camera-menu {
+  position: absolute;
+  bottom: 58px;
+  background: rgba(20, 20, 25, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  z-index: 10002;
+  min-width: 140px;
+}
+
+.resolution-menu {
+  left: 0;
+}
+
+.fps-menu {
+  right: 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.menu-item.active {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.check-icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+/* Vue Menu Transitions */
+.fade-menu-enter-active,
+.fade-menu-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-menu-enter-from,
+.fade-menu-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.95);
+}
+
+/* Recording Timer (inline, right of record button) */
+.camera-controls-right {
+  pointer-events: auto;
+}
+
+.recording-timer-inline {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -607,7 +760,9 @@ onUnmounted(() => {
   font-size: 0.9rem;
   font-weight: 600;
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
-  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInCameraBar 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 130px;
+  justify-content: center;
 }
 
 .timer-dot {
@@ -621,22 +776,6 @@ onUnmounted(() => {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-@keyframes slideDown {
-  from {
-    transform: translate(-50%, -30px);
-    opacity: 0;
-  }
-  to {
-    transform: translate(-50%, 0);
-    opacity: 1;
-  }
 }
 
 /* Toast Notification Styles */
