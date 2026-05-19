@@ -17,7 +17,9 @@ export function useSettings() {
   const saved = localStorage.getItem('teleprompterSettings')
   if (saved) {
     try {
-      settings.value = { ...defaultSettings, ...JSON.parse(saved) }
+      const parsed = JSON.parse(saved)
+      parsed.cameraEnabled = false // camera must be disabled by default
+      settings.value = { ...defaultSettings, ...parsed }
     } catch (e) {
       console.error('Failed to parse settings')
     }

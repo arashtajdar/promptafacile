@@ -7,12 +7,15 @@
             <Square v-if="isRecording" :size="16" fill="currentColor" />
             <Circle v-else :size="16" fill="currentColor" />
           </button>
-          <button @click="togglePlay" class="primary-btn icon-btn" :title="isPlaying ? 'Pause' : 'Play'">
+          <button @click="handleTogglePlay" class="primary-btn icon-btn" :title="isPlaying ? 'Pause' : 'Play'">
             <Pause v-if="isPlaying" :size="20" />
             <Play v-else :size="20" />
           </button>
-          <button @click="reset" class="btn icon-btn" title="Reset">
+          <button @click="handleReset" class="btn icon-btn" title="Reset">
             <RotateCcw :size="18" />
+          </button>
+          <button @click="isManuallyHidden = true" class="btn icon-btn" title="Hide Controls">
+            <EyeOff :size="18" />
           </button>
         </template>
         <span class="mode-badge" v-else>Editor Mode</span>
@@ -45,15 +48,12 @@
         <button @click="settings.mirrorMode = !settings.mirrorMode" class="btn icon-btn" :class="{ active: settings.mirrorMode }" title="Mirror Text">
           <FlipHorizontal :size="18" />
         </button>
-        <button @click="toggleMode" class="btn icon-btn" :class="{ 'active-mode': !isEditorMode }" :title="isEditorMode ? 'Switch to Prompter' : 'Switch to Editor'">
+        <button @click="handleToggleMode" class="btn icon-btn" :class="{ 'active-mode': !isEditorMode }" :title="isEditorMode ? 'Switch to Prompter' : 'Switch to Editor'">
           <MonitorPlay v-if="isEditorMode" :size="18" />
           <Edit3 v-else :size="18" />
         </button>
         <button v-if="!isIos" @click="toggleFullscreen" class="btn icon-btn" title="Toggle Fullscreen">
           <Maximize :size="18" />
-        </button>
-        <button v-if="!isEditorMode" @click="isManuallyHidden = true" class="btn icon-btn" title="Hide Controls">
-          <EyeOff :size="18" />
         </button>
       </div>
     </div>
@@ -96,11 +96,26 @@ watch(isEditorMode, (val) => {
 })
 
 
+const handleTogglePlay = () => {
+  console.log('[Toolbar] handleTogglePlay clicked. current isPlaying:', isPlaying.value)
+  togglePlay()
+}
+
+const handleReset = () => {
+  console.log('[Toolbar] handleReset clicked')
+  reset()
+}
+
 const toggleMode = () => {
   setIsEditorMode(!isEditorMode.value)
   if (!isEditorMode.value && isPlaying.value) {
     togglePlay() // pause when entering edit
   }
+}
+
+const handleToggleMode = () => {
+  console.log('[Toolbar] handleToggleMode clicked. current isEditorMode:', isEditorMode.value)
+  toggleMode()
 }
 
 const toggleFullscreen = () => {

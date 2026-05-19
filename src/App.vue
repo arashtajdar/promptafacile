@@ -61,14 +61,13 @@
       <span class="timer-text">{{ formattedTime }}</span>
     </div>
 
-    <!-- Video Save Status Display for copying -->
-    <div class="save-status-display">
-      <div class="save-status-header">
-        <span>Teleprompter Console Log</span>
-        <button @click="copySaveStatus" class="copy-btn">Copy Logs</button>
+    <!-- Toast Notification -->
+    <Transition name="toast">
+      <div v-if="toast.visible" class="toast-notification">
+        <span class="toast-spinner" v-if="toast.loading"></span>
+        <span class="toast-text">{{ toast.message }}</span>
       </div>
-      <div class="save-status-content">{{ saveStatusLog || 'No events recorded yet. Enable the camera or start recording to see logs.' }}</div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -90,16 +89,61 @@ const camera = useCamera()
 const { logs, showDebugConsole, clearLogs } = useDebug()
 
 const isRecording = camera.isRecording
-const stopRecording = camera.stopRecording
 const currentResolution = camera.currentResolution
 const currentFPS = camera.currentFPS
 const setResolutionAndFrameRate = camera.setResolutionAndFrameRate
-const saveStatusLog = camera.saveStatusLog
 
-const copySaveStatus = () => {
-  if (saveStatusLog.value) {
-    navigator.clipboard.writeText(saveStatusLog.value)
-    alert('Log copied to clipboard!')
+// Toast Notification State & Controls
+const toast = ref({
+  visible: false,
+  message: '',
+  loading: false
+})
+
+let toastTimeout = null
+const showToastMsg = (message, duration = 3000, loading = false) => {
+  if (toastTimeout) clearTimeout(toastTimeout)
+  toast.value = {
+    visible: true,
+    message,
+    loading
+  }
+  if (duration > 0) {
+    toastTimeout = setTimeout(() => {
+      toast.value.visible = false
+    }, duration)
+  }
+}
+
+// Refresh Camera (disabled and enabled again)
+const refreshCamera = async () => {
+  if (!settings.value.cameraEnabled) return
+
+  showToastMsg('Refreshing camera...', 0, true)
+
+  try {
+    settings.value.cameraEnabled = false
+    // Wait for the stop process to complete and give it some breathing room
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    settings.value.cameraEnabled = true
+    
+    // Show success toast and auto-dismiss after a brief delay
+    showToastMsg('Camera refreshed successfully!', 2500, false)
+  } catch (e) {
+    console.error('Failed to refresh camera:', e)
+    showToastMsg('Failed to refresh camera', 3000, false)
+  }
+}
+
+// Wrapped stopRecording to auto-refresh camera after stopping
+const stopRecording = async () => {
+  try {
+    await camera.stopRecording()
+    // Trigger camera refresh
+    await refreshCamera()
+  } catch (e) {
+    console.error('stopRecording failed:', e)
+    showToastMsg('Failed to stop recording', 3000, false)
   }
 }
 
@@ -182,7 +226,7 @@ provide('maxScroll', scroll.maxScroll)
 // Provide camera state
 provide('isRecording', camera.isRecording)
 provide('startRecording', camera.startRecording)
-provide('stopRecording', camera.stopRecording)
+provide('stopRecording', stopRecording)
 
 // Provide debug state
 provide('showDebugConsole', showDebugConsole)
@@ -576,60 +620,60 @@ onUnmounted(() => {
   }
 }
 
-/* Video Save Status Panel */
-.save-status-display {
+/* Toast Notification Styles */
+.toast-notification {
   position: fixed;
-  bottom: 80px;
-  left: 20px;
-  right: 20px;
-  background: rgba(18, 18, 23, 0.85);
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10005;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 15, 20, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 12px;
-  z-index: 10002;
-  color: #fff;
-  font-family: monospace;
-  font-size: 0.8rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 12px 24px;
+  border-radius: 50px;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  pointer-events: none;
 }
 
-.save-status-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 6px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.6);
+.toast-text {
+  letter-spacing: 0.2px;
 }
 
-.copy-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  padding: 4px 10px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.2s ease;
+.toast-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: toast-spin 0.8s linear infinite;
 }
 
-.copy-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+@keyframes toast-spin {
+  to { transform: rotate(360deg); }
 }
 
-.save-status-content {
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 80px;
-  overflow-y: auto;
-  line-height: 1.4;
+/* Vue transition styles for toast */
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -20px);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
 }
 </style>
