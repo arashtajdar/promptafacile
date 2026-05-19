@@ -9,7 +9,11 @@
     </div>
     <footer class="editor-footer">
       <span class="app-version">Teleprompter v1.0.0</span>
-      <button @click="openPrivacy" class="footer-link">Privacy Policy</button>
+      <div class="footer-links">
+        <button @click="openAbout" class="footer-link">About</button>
+        <span class="footer-sep">·</span>
+        <button @click="openPrivacy" class="footer-link">Privacy Policy</button>
+      </div>
     </footer>
   </div>
 </template>
@@ -18,9 +22,14 @@
 import { inject } from 'vue'
 const { settings } = inject('settings')
 const showPrivacy = inject('showPrivacy')
+const showAbout = inject('showAbout')
 
 const openPrivacy = () => {
   showPrivacy.value = true
+}
+
+const openAbout = () => {
+  showAbout.value = true
 }
 </script>
 
@@ -97,6 +106,18 @@ const openPrivacy = () => {
 .footer-link:hover {
   color: #a1a1aa;
   text-decoration: underline;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-sep {
+  color: #52525b;
+  font-size: 0.85rem;
+  user-select: none;
 }
 
 @media (max-width: 768px) {

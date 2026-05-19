@@ -4,9 +4,10 @@
     @mousemove="onMouseMove" 
     @touchstart="onMouseMove"
   >
-    <Toolbar v-if="!showPrivacy" />
-    <div class="main-content" :class="{ 'privacy-view': showPrivacy }">
+    <Toolbar v-if="!showPrivacy && !showAbout" />
+    <div class="main-content" :class="{ 'privacy-view': showPrivacy || showAbout }">
       <PrivacyPolicy v-if="showPrivacy" />
+      <AboutPage v-else-if="showAbout" />
       <template v-else>
         <Editor v-if="isEditorMode" />
         <Teleprompter v-else />
@@ -87,6 +88,7 @@ import Editor from './components/Editor.vue'
 import Teleprompter from './components/Teleprompter.vue'
 import Toolbar from './components/Toolbar.vue'
 import PrivacyPolicy from './components/PrivacyPolicy.vue'
+import AboutPage from './components/AboutPage.vue'
 import { useSettings } from './composables/useSettings'
 import { useScroll } from './composables/useScroll'
 import { useCamera } from './composables/useCamera'
@@ -184,11 +186,13 @@ onUnmounted(() => {
 // Mode state
 const isEditorMode = ref(true)
 const showPrivacy = ref(false)
+const showAbout = ref(false)
 
 const checkRoute = () => {
   const path = window.location.pathname.toLowerCase()
   const hash = window.location.hash.toLowerCase()
   showPrivacy.value = path === '/privacypolicy' || hash === '#/privacypolicy' || hash === '#/privacy'
+  showAbout.value = path === '/about' || hash === '#/about'
 }
 
 const navigateTo = (isPrivacy) => {
@@ -227,6 +231,7 @@ provide('settings', { settings })
 provide('isEditorMode', isEditorMode)
 provide('setIsEditorMode', (val) => isEditorMode.value = val)
 provide('showPrivacy', showPrivacy)
+provide('showAbout', showAbout)
 
 provide('isPlaying', scroll.isPlaying)
 provide('togglePlay', scroll.toggle)
