@@ -3,6 +3,28 @@ import path from 'path';
 
 const controllerPath = path.resolve('node_modules/@capacitor-community/camera-preview/ios/Sources/CameraPreviewPlugin/CameraController.swift');
 const pluginPath = path.resolve('node_modules/@capacitor-community/camera-preview/ios/Sources/CameraPreviewPlugin/CameraPreviewPlugin.swift');
+const androidPath = path.resolve('node_modules/@capacitor-community/camera-preview/android/src/main/java/com/ahm/capacitor/camera/preview/CameraPreview.java');
+
+// Helper to replace or insert safely
+function replaceOnce(filePath, target, replacement) {
+  if (!fs.existsSync(filePath)) {
+    console.error('File not found:', filePath);
+    return false;
+  }
+  let content = fs.readFileSync(filePath, 'utf8');
+  if (content.includes(replacement)) {
+    console.log(`Already patched in ${path.basename(filePath)}`);
+    return true;
+  }
+  if (!content.includes(target)) {
+    console.error(`Target not found in ${path.basename(filePath)}: "${target}"`);
+    return false;
+  }
+  content = content.replace(target, replacement);
+  fs.writeFileSync(filePath, content, 'utf8');
+  console.log(`Successfully patched ${path.basename(filePath)}`);
+  return true;
+}
 
 // 1. Patch CameraController.swift
 if (fs.existsSync(controllerPath)) {
@@ -39,7 +61,7 @@ if (fs.existsSync(controllerPath)) {
     'try configureVideoOutput()'
   );
 
-  // Patch captureVideo and stopRecording methods
+  // Patch captureVideo, stopRecording, and add setResolutionAndFrameRate
   const captureMethodStart = 'func captureVideo(completion: @escaping (URL?, Error?) -> Void) {';
   const stopMethodStart = 'func stopRecording(completion: @escaping (Error?) -> Void) {';
   
@@ -79,6 +101,61 @@ if (fs.existsSync(controllerPath)) {
         } else {
             completion(nil)
         }
+    }
+
+    func setResolutionAndFrameRate(resolution: String, fps: Int) throws {
+        guard let captureSession = self.captureSession else {
+            throw CameraControllerError.captureSessionIsMissing
+        }
+
+        guard let device = (self.currentCameraPosition == .front ? self.frontCamera : self.rearCamera) else {
+            throw CameraControllerError.noCamerasAvailable
+        }
+
+        captureSession.beginConfiguration()
+
+        let preset: AVCaptureSession.Preset
+        switch resolution.lowercased() {
+        case "4k":
+            preset = .hd4K3840x2160
+        case "720p":
+            preset = .hd1280x720
+        case "1080p":
+            fallthrough
+        default:
+            preset = .hd1920x1080
+        }
+
+        if captureSession.canSetSessionPreset(preset) {
+            captureSession.sessionPreset = preset
+        }
+
+        try device.lockForConfiguration()
+
+        var selectedFormat: AVCaptureDevice.Format? = nil
+        let formats = device.formats
+        for format in formats {
+            let ranges = format.videoSupportedFrameRateRanges
+            for range in ranges {
+                if range.maxFrameRate >= Double(fps) && range.minFrameRate <= Double(fps) {
+                    selectedFormat = format
+                    break
+                }
+            }
+            if selectedFormat != nil { break }
+        }
+
+        if let format = selectedFormat {
+            device.activeFormat = format
+        }
+
+        let frameDuration = CMTime(value: 1, timescale: CMTimeScale(fps))
+        device.activeVideoMinFrameDuration = frameDuration
+        device.activeVideoMaxFrameDuration = frameDuration
+
+        device.unlockForConfiguration()
+
+        captureSession.commitConfiguration()
     }`;
       content = content.replace(originalBlock, replacementBlock);
     }
@@ -123,11 +200,19 @@ if (fs.existsSync(pluginPath)) {
     );
   }
 
-  // Replace startRecordVideo and stopRecordVideo methods
+  // Register setResolutionAndFrameRate method in pluginMethods list
+  if (!content.includes('CAPPluginMethod(name: "setResolutionAndFrameRate"')) {
+    const target = 'CAPPluginMethod(name: "isCameraStarted", returnType: CAPPluginReturnPromise)';
+    content = content.replace(
+      target,
+      `CAPPluginMethod(name: "setResolutionAndFrameRate", returnType: CAPPluginReturnPromise),\n        ${target}`
+    );
+  }
+
+  // Replace startRecordVideo, stopRecordVideo, and add setResolutionAndFrameRate method
   const startMethodStart = '@objc func startRecordVideo(_ call: CAPPluginCall) {';
   if (content.includes(startMethodStart)) {
     const startIdx = content.indexOf(startMethodStart);
-    // Find the end of stopRecordVideo
     const stopMethodStart = '@objc func stopRecordVideo(_ call: CAPPluginCall) {';
     const stopIdx = content.indexOf(stopMethodStart);
     if (startIdx !== -1 && stopIdx !== -1) {
@@ -169,6 +254,20 @@ if (fs.existsSync(pluginPath)) {
                 }
             }
         }
+    }
+
+    @objc func setResolutionAndFrameRate(_ call: CAPPluginCall) {
+        let resolution = call.getString("resolution") ?? "1080p"
+        let fps = call.getInt("fps") ?? 30
+        
+        DispatchQueue.main.async {
+            do {
+                try self.cameraController.setResolutionAndFrameRate(resolution: resolution, fps: fps)
+                call.resolve()
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
     }`;
         content = content.replace(originalBlock, replacementBlock);
       }
@@ -179,4 +278,24 @@ if (fs.existsSync(pluginPath)) {
   console.log('Successfully patched CameraPreviewPlugin.swift');
 } else {
   console.error('CameraPreviewPlugin.swift not found at', pluginPath);
+}
+
+// 3. Patch CameraPreview.java on Android
+if (fs.existsSync(androidPath)) {
+  let content = fs.readFileSync(androidPath, 'utf8');
+
+  // Add setResolutionAndFrameRate method if not already present
+  if (!content.includes('public void setResolutionAndFrameRate(')) {
+    const target = 'public void stopRecordVideo(PluginCall call) {';
+    const method = `    @PluginMethod
+    public void setResolutionAndFrameRate(PluginCall call) {
+        call.resolve();
+    }\n\n    ${target}`;
+    content = content.replace(target, method);
+  }
+
+  fs.writeFileSync(androidPath, content, 'utf8');
+  console.log('Successfully patched CameraPreview.java');
+} else {
+  console.error('CameraPreview.java not found at', androidPath);
 }

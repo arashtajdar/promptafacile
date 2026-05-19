@@ -40,6 +40,26 @@
       <span class="stop-icon-dot"></span>
       <span>Stop Recording</span>
     </button>
+
+    <!-- iOS style Camera controls at the bottom when camera is enabled but not recording -->
+    <div 
+      v-if="settings.cameraEnabled && !isEditorMode && !isRecording" 
+      class="camera-controls-bottom"
+    >
+      <button @click="toggleResolution" class="ios-camera-btn">
+        {{ currentResolution === '4k' ? '4K' : 'HD' }}
+      </button>
+      <span class="ios-camera-divider">|</span>
+      <button @click="toggleFPS" class="ios-camera-btn">
+        {{ currentFPS }}
+      </button>
+    </div>
+
+    <!-- iOS style Recording Timer at the top center -->
+    <div v-if="isRecording" class="recording-timer">
+      <span class="timer-dot"></span>
+      <span class="timer-text">{{ formattedTime }}</span>
+    </div>
   </div>
 </template>
 
@@ -62,6 +82,9 @@ const { logs, showDebugConsole, clearLogs } = useDebug()
 
 const isRecording = camera.isRecording
 const stopRecording = camera.stopRecording
+const currentResolution = camera.currentResolution
+const currentFPS = camera.currentFPS
+const setResolutionAndFrameRate = camera.setResolutionAndFrameRate
 
 // Watch cameraEnabled setting to start/stop native camera
 watch(() => settings.value.cameraEnabled, async (enabled) => {
@@ -172,6 +195,51 @@ watch([scroll.isPlaying, isEditorMode], () => {
   resetHideTimer()
 })
 provide('hideToolbar', hideToolbar)
+
+// Recording Timer State & Controls
+const secondsRecorded = ref(0)
+const timerInterval = ref(null)
+
+const formattedTime = computed(() => {
+  const mins = Math.floor(secondsRecorded.value / 60)
+  const secs = secondsRecorded.value % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+})
+
+const startTimer = () => {
+  secondsRecorded.value = 0
+  if (timerInterval.value) clearInterval(timerInterval.value)
+  timerInterval.value = setInterval(() => {
+    secondsRecorded.value++
+  }, 1000)
+}
+
+const stopTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value)
+    timerInterval.value = null
+  }
+}
+
+watch(isRecording, (recording) => {
+  if (recording) {
+    startTimer()
+    hideToolbar.value = true // Immediately hide controls during recording
+  } else {
+    stopTimer()
+    hideToolbar.value = false // Restore controls
+  }
+})
+
+const toggleResolution = async () => {
+  const newRes = currentResolution.value === '1080p' ? '4k' : '1080p'
+  await setResolutionAndFrameRate(newRes, currentFPS.value)
+}
+
+const toggleFPS = async () => {
+  const newFPS = currentFPS.value === 30 ? 60 : 30
+  await setResolutionAndFrameRate(currentResolution.value, newFPS)
+}
 
 // Keyboard shortcuts
 const onKeyDown = (e) => {
@@ -405,6 +473,109 @@ onUnmounted(() => {
   100% {
     transform: scale(2);
     opacity: 0;
+  }
+}
+
+/* iOS Style Camera Controls (Resolution / FPS) */
+.camera-controls-bottom {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  padding: 8px 20px;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-camera-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  padding: 4px 10px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.ios-camera-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.ios-camera-btn:active {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.ios-camera-divider {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.85rem;
+  font-weight: 300;
+  user-select: none;
+}
+
+/* iOS Style Recording Timer */
+.recording-timer {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 6px 16px;
+  border-radius: 20px;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timer-dot {
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+  border-radius: 50%;
+  animation: blink 1s infinite step-end;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translate(-50%, -30px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
   }
 }
 </style>

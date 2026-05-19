@@ -7,6 +7,8 @@ import { Media } from '@capacitor-community/media'
 export function useCamera() {
   const isRecording = ref(false)
   const isCameraActive = ref(false)
+  const currentResolution = ref('1080p')
+  const currentFPS = ref(30)
 
   // Web fallback states
   let webStream = null
@@ -22,17 +24,31 @@ export function useCamera() {
           throw new Error('Web Camera API (navigator.mediaDevices.getUserMedia) is undefined. Camera access REQUIRES a secure connection (HTTPS) or localhost. Please verify your Railway deployment is using HTTPS and camera permissions are granted in Safari settings.')
         }
 
+        const heightConstraint = currentResolution.value === '4k' ? 2160 : (currentResolution.value === '720p' ? 720 : 1080)
+        const widthConstraint = currentResolution.value === '4k' ? 3840 : (currentResolution.value === '720p' ? 1280 : 1920)
+        const fpsConstraint = currentFPS.value
+
         let stream
         try {
           // Attempt front camera by preference and ask for both audio and video
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            video: { 
+              facingMode: 'user', 
+              width: { ideal: widthConstraint }, 
+              height: { ideal: heightConstraint },
+              frameRate: { ideal: fpsConstraint }
+            },
             audio: true
           })
         } catch (err) {
           console.warn('Failed to get camera with audio, trying video only...', err)
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+            video: { 
+              facingMode: 'user', 
+              width: { ideal: widthConstraint }, 
+              height: { ideal: heightConstraint },
+              frameRate: { ideal: fpsConstraint }
+            }
           })
         }
 
@@ -83,6 +99,15 @@ export function useCamera() {
         toBack: true // Crucial for overlaying web UI behind the WebView
       })
       isCameraActive.value = true
+
+      try {
+        await CameraPreview.setResolutionAndFrameRate({
+          resolution: currentResolution.value,
+          fps: currentFPS.value
+        })
+      } catch (presetError) {
+        console.warn('Failed to apply initial resolution and frame rate settings:', presetError)
+      }
     } catch (e) {
       console.error('Failed to start native camera', e)
     }
@@ -186,10 +211,13 @@ export function useCamera() {
 
     // Native Capacitor logic
     try {
+      const widthVal = currentResolution.value === '4k' ? 2160 : (currentResolution.value === '720p' ? 720 : 1080)
+      const heightVal = currentResolution.value === '4k' ? 3840 : (currentResolution.value === '720p' ? 1280 : 1920)
+
       await CameraPreview.startRecordVideo({
         cameraDirection: 'front',
-        width: 1080,
-        height: 1920,
+        width: widthVal,
+        height: heightVal,
         quality: 100,
         withFlash: false
       })
@@ -248,13 +276,74 @@ export function useCamera() {
     }
   }
 
+  const setResolutionAndFrameRate = async (resolution, fps) => {
+    currentResolution.value = resolution
+    currentFPS.value = fps
+
+    if (!isCameraActive.value) return
+
+    if (Capacitor.isNative) {
+      try {
+        await CameraPreview.setResolutionAndFrameRate({
+          resolution,
+          fps
+        })
+      } catch (e) {
+        console.error('Failed to set native resolution and frame rate:', e)
+      }
+    } else {
+      // Re-initialize web camera with new constraints
+      try {
+        if (webStream) {
+          webStream.getTracks().forEach(track => track.stop())
+        }
+        
+        const heightConstraint = resolution === '4k' ? 2160 : (resolution === '720p' ? 720 : 1080)
+        const widthConstraint = resolution === '4k' ? 3840 : (resolution === '720p' ? 1280 : 1920)
+        
+        let stream
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              facingMode: 'user', 
+              width: { ideal: widthConstraint }, 
+              height: { ideal: heightConstraint },
+              frameRate: { ideal: fps }
+            },
+            audio: true
+          })
+        } catch (err) {
+          console.warn('Failed to get camera with audio, trying video only...', err)
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              facingMode: 'user', 
+              width: { ideal: widthConstraint }, 
+              height: { ideal: heightConstraint },
+              frameRate: { ideal: fps }
+            }
+          })
+        }
+        
+        webStream = stream
+        if (webVideoElement) {
+          webVideoElement.srcObject = stream
+        }
+      } catch (e) {
+        console.error('Failed to set web resolution/fps:', e)
+      }
+    }
+  }
+
   return {
     isCameraActive,
     isRecording,
+    currentResolution,
+    currentFPS,
     startCamera,
     stopCamera,
     startRecording,
-    stopRecording
+    stopRecording,
+    setResolutionAndFrameRate
   }
 }
 
