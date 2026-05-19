@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node scripts/patch-camera-preview.js"
   },
   "dependencies": {
     "@capacitor-community/camera-preview": "^8.0.1",
