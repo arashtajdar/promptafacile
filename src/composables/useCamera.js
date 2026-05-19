@@ -182,6 +182,13 @@ export function useCamera() {
       try {
         recordedChunks = []
         
+        // Build a combined stream with video + audio tracks
+        const combinedTracks = []
+        webStream.getVideoTracks().forEach(t => combinedTracks.push(t))
+        webStream.getAudioTracks().forEach(t => combinedTracks.push(t))
+        const recordingStream = new MediaStream(combinedTracks)
+        addLog(`Recording stream tracks: video=${recordingStream.getVideoTracks().length}, audio=${recordingStream.getAudioTracks().length}`)
+        
         // Select an appropriate mimetype
         let options = { mimeType: 'video/webm;codecs=vp9,opus' }
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
@@ -197,7 +204,7 @@ export function useCamera() {
           options = {} // System default
         }
 
-        mediaRecorder = new MediaRecorder(webStream, options)
+        mediaRecorder = new MediaRecorder(recordingStream, options)
         
         mediaRecorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
@@ -249,7 +256,8 @@ export function useCamera() {
         width: widthVal,
         height: heightVal,
         quality: 100,
-        withFlash: false
+        withFlash: false,
+        withAudio: true
       })
       isRecording.value = true
       addLog('CameraPreview.startRecordVideo resolved successfully')

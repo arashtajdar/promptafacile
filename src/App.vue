@@ -585,7 +585,7 @@ onUnmounted(() => {
 /* iOS Style Recording Timer */
 .recording-timer {
   position: fixed;
-  top: calc(env(safe-area-inset-top) + 20px);
+  top: calc(env(safe-area-inset-top) + 80px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 10001;
@@ -637,7 +637,7 @@ onUnmounted(() => {
 /* Toast Notification Styles */
 .toast-notification {
   position: fixed;
-  top: 30px;
+  bottom: 130px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10005;
@@ -683,11 +683,11 @@ onUnmounted(() => {
 
 .toast-enter-from {
   opacity: 0;
-  transform: translate(-50%, -20px);
+  transform: translate(-50%, 20px);
 }
 
 .toast-leave-to {
   opacity: 0;
-  transform: translate(-50%, -20px);
+  transform: translate(-50%, 20px);
 }
 </style>
