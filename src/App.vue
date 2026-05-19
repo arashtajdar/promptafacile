@@ -90,6 +90,43 @@ onUnmounted(() => {
 const isEditorMode = ref(true)
 const showPrivacy = ref(false)
 
+const checkRoute = () => {
+  const path = window.location.pathname.toLowerCase()
+  const hash = window.location.hash.toLowerCase()
+  showPrivacy.value = path === '/privacypolicy' || hash === '#/privacypolicy' || hash === '#/privacy'
+}
+
+const navigateTo = (isPrivacy) => {
+  const protocol = window.location.protocol
+  const isWeb = protocol.startsWith('http')
+  
+  if (isPrivacy) {
+    if (isWeb) {
+      if (window.location.pathname.toLowerCase() !== '/privacypolicy') {
+        history.pushState(null, '', '/PrivacyPolicy')
+      }
+    } else {
+      if (window.location.hash.toLowerCase() !== '#/privacypolicy') {
+        window.location.hash = '/PrivacyPolicy'
+      }
+    }
+  } else {
+    if (isWeb) {
+      if (window.location.pathname.toLowerCase() === '/privacypolicy') {
+        history.pushState(null, '', '/')
+      }
+    } else {
+      if (window.location.hash.toLowerCase() === '#/privacypolicy') {
+        window.location.hash = '/'
+      }
+    }
+  }
+}
+
+watch(showPrivacy, (newVal) => {
+  navigateTo(newVal)
+})
+
 // Provide state to components
 provide('settings', { settings })
 provide('isEditorMode', isEditorMode)
@@ -180,10 +217,15 @@ const onKeyDown = (e) => {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
+  checkRoute()
+  window.addEventListener('popstate', checkRoute)
+  window.addEventListener('hashchange', checkRoute)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('popstate', checkRoute)
+  window.removeEventListener('hashchange', checkRoute)
   if (hideTimeout) clearTimeout(hideTimeout)
 })
 </script>
