@@ -30,6 +30,11 @@ function replaceOnce(filePath, target, replacement) {
 if (fs.existsSync(controllerPath)) {
   let content = fs.readFileSync(controllerPath, 'utf8');
 
+  // Add CoreMedia import if missing
+  if (!content.includes('import CoreMedia')) {
+    content = content.replace('import AVFoundation', "import AVFoundation\nimport CoreMedia");
+  }
+
   // Add properties if not already present
   if (!content.includes('var videoOutput: AVCaptureMovieFileOutput?')) {
     const target = 'var zoomFactor: CGFloat = 1.0';
@@ -68,9 +73,10 @@ if (fs.existsSync(controllerPath)) {
   if (content.includes(captureMethodStart) && content.includes(stopMethodStart)) {
     // We can extract and replace the entire region of captureVideo/stopRecording
     const startIdx = content.indexOf(captureMethodStart);
-    const endIdx = content.indexOf('}', content.indexOf('}', startIdx + captureMethodStart.length) + 1); // find matching closure end
+    const stopIdx = content.indexOf(stopMethodStart);
+    const endIdx = content.indexOf('}', content.indexOf('}', stopIdx + stopMethodStart.length) + 1); // find end of stopRecording method
     
-    if (startIdx !== -1 && endIdx !== -1) {
+    if (startIdx !== -1 && stopIdx !== -1 && endIdx !== -1) {
       const originalBlock = content.substring(startIdx, endIdx + 1);
       const replacementBlock = `func captureVideo(completion: @escaping (URL?, Error?) -> Void) {
         guard let captureSession = self.captureSession, captureSession.isRunning else {
@@ -149,7 +155,7 @@ if (fs.existsSync(controllerPath)) {
             device.activeFormat = format
         }
 
-        let frameDuration = CMTime(value: 1, timescale: CMTimeScale(fps))
+        let frameDuration = CMTime(value: 1, timescale: Int32(fps))
         device.activeVideoMinFrameDuration = frameDuration
         device.activeVideoMaxFrameDuration = frameDuration
 
@@ -161,14 +167,12 @@ if (fs.existsSync(controllerPath)) {
     }
   }
 
-  // Patch the delegate implementation
+  // Patch the delegate implementation (at the end of the file)
   const delegateStart = 'extension CameraController: AVCaptureFileOutputRecordingDelegate {';
   if (content.includes(delegateStart)) {
     const startIdx = content.indexOf(delegateStart);
-    const endIdx = content.indexOf('}', startIdx + delegateStart.length);
-    if (startIdx !== -1 && endIdx !== -1) {
-      const originalDelegate = content.substring(startIdx, endIdx + 1);
-      const replacementDelegate = `extension CameraController: AVCaptureFileOutputRecordingDelegate {
+    if (startIdx !== -1) {
+      content = content.substring(0, startIdx) + `extension CameraController: AVCaptureFileOutputRecordingDelegate {
     public func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         if error == nil {
             self.videoRecordCompletionBlock?(outputFileURL, nil)
@@ -176,8 +180,7 @@ if (fs.existsSync(controllerPath)) {
             self.videoRecordCompletionBlock?(outputFileURL, error)
         }
     }
-}`;
-      content = content.replace(originalDelegate, replacementDelegate);
+}\n`;
     }
   }
 
