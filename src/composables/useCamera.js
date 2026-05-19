@@ -10,6 +10,12 @@ export function useCamera() {
   const currentResolution = ref('1080p')
   const currentFPS = ref(30)
   const saveStatusLog = ref('')
+  
+  const addLog = (msg) => {
+    const time = new Date().toLocaleTimeString()
+    saveStatusLog.value = (saveStatusLog.value ? saveStatusLog.value + '\n' : '') + `[${time}] ${msg}`
+    console.log(`[useCamera LOG] ${msg}`)
+  }
 
   // Web fallback states
   let webStream = null
@@ -18,6 +24,7 @@ export function useCamera() {
   let recordedChunks = []
 
   const startCamera = async () => {
+    addLog('startCamera called')
     if (!Capacitor.isNative) {
       // Web fallback
       try {
@@ -86,7 +93,9 @@ export function useCamera() {
         video.srcObject = stream
         webVideoElement = video
         isCameraActive.value = true
+        addLog('Web camera started successfully')
       } catch (e) {
+        addLog(`Web camera start failed: ${e.message || e}`)
         console.error('Failed to start web camera:', e)
         alert('Could not access camera. Please make sure camera permissions are granted in your browser settings.')
       }
@@ -95,26 +104,34 @@ export function useCamera() {
 
     // Native Capacitor logic
     try {
+      addLog('Native startCamera block entered')
+      addLog('Invoking CameraPreview.start...')
       await CameraPreview.start({
         position: 'front',
         toBack: true // Crucial for overlaying web UI behind the WebView
       })
       isCameraActive.value = true
+      addLog('CameraPreview.start resolved successfully')
 
       try {
+        addLog(`Invoking setResolutionAndFrameRate: ${currentResolution.value} @ ${currentFPS.value} fps`)
         await CameraPreview.setResolutionAndFrameRate({
           resolution: currentResolution.value,
           fps: currentFPS.value
         })
+        addLog('Initial resolution and frame rate applied successfully')
       } catch (presetError) {
+        addLog(`Failed to apply initial resolution and frame rate settings: ${presetError.message || presetError}`)
         console.warn('Failed to apply initial resolution and frame rate settings:', presetError)
       }
     } catch (e) {
+      addLog(`CameraPreview.start failed: ${e.message || e}`)
       console.error('Failed to start native camera', e)
     }
   }
 
   const stopCamera = async () => {
+    addLog('stopCamera called')
     if (!Capacitor.isNative) {
       // Web fallback
       try {
@@ -130,7 +147,9 @@ export function useCamera() {
           webVideoElement = null
         }
         isCameraActive.value = false
+        addLog('Web camera stopped')
       } catch (e) {
+        addLog(`Failed to stop web camera: ${e.message || e}`)
         console.error('Failed to stop web camera', e)
       }
       return
@@ -141,17 +160,22 @@ export function useCamera() {
       if (isRecording.value) {
         await stopRecording()
       }
+      addLog('Invoking CameraPreview.stop...')
       await CameraPreview.stop()
       isCameraActive.value = false
+      addLog('CameraPreview.stop resolved successfully')
     } catch (e) {
+      addLog(`CameraPreview.stop failed: ${e.message || e}`)
       console.error('Failed to stop native camera', e)
     }
   }
 
   const startRecording = async () => {
+    addLog('startRecording called')
     if (!Capacitor.isNative) {
       // Web fallback MediaRecorder recording
       if (!webStream) {
+        addLog('Error: No camera stream found to record')
         console.error('No camera stream found to record')
         return
       }
@@ -198,12 +222,15 @@ export function useCamera() {
             window.URL.revokeObjectURL(url)
           }, 100)
           
+          addLog('Web recording completed & download triggered')
           alert('Recording completed! Video downloaded to your device.')
         }
 
         mediaRecorder.start(1000) // Chunk every 1s
         isRecording.value = true
+        addLog('Web MediaRecorder started')
       } catch (e) {
+        addLog(`Web recording start failed: ${e.message || e}`)
         console.error('Failed to start web recording:', e)
         alert('Could not start video recording. MediaRecorder is not supported or failed to initialize.')
       }
@@ -212,9 +239,11 @@ export function useCamera() {
 
     // Native Capacitor logic
     try {
+      addLog('Native startRecording block entered')
       const widthVal = currentResolution.value === '4k' ? 2160 : (currentResolution.value === '720p' ? 720 : 1080)
       const heightVal = currentResolution.value === '4k' ? 3840 : (currentResolution.value === '720p' ? 1280 : 1920)
 
+      addLog(`Invoking CameraPreview.startRecordVideo: res=${currentResolution.value} (${widthVal}x${heightVal})`)
       await CameraPreview.startRecordVideo({
         cameraDirection: 'front',
         width: widthVal,
@@ -223,12 +252,15 @@ export function useCamera() {
         withFlash: false
       })
       isRecording.value = true
+      addLog('CameraPreview.startRecordVideo resolved successfully')
     } catch (e) {
+      addLog(`CameraPreview.startRecordVideo failed: ${e.message || e}`)
       console.error('Failed to start native recording', e)
     }
   }
 
   const stopRecording = async () => {
+    addLog('stopRecording called')
     if (!Capacitor.isNative) {
       // Web fallback
       try {
@@ -236,7 +268,9 @@ export function useCamera() {
           mediaRecorder.stop()
         }
         isRecording.value = false
+        addLog('Web recording stopped')
       } catch (e) {
+        addLog(`Failed to stop web recording: ${e.message || e}`)
         console.error('Failed to stop web recording:', e)
       }
       return
@@ -244,24 +278,23 @@ export function useCamera() {
 
     // Native Capacitor logic
     try {
-      saveStatusLog.value = 'Stopping recording natively...'
+      addLog('Invoking CameraPreview.stopRecordVideo...')
       const result = await CameraPreview.stopRecordVideo()
       isRecording.value = false
       
-      saveStatusLog.value = `Stop completed. Native path: ${result?.videoFilePath}`
-      console.log('Video saved to:', result?.videoFilePath)
+      addLog(`Stop resolved. Native path returned: ${result?.videoFilePath || 'NONE'}`)
       if (result && result.videoFilePath) {
         if (Capacitor.getPlatform() === 'android') {
           try {
-            saveStatusLog.value = 'Requesting Android permissions...'
+            addLog('Requesting Android permissions...')
             await Media.requestPermissions()
-            saveStatusLog.value = 'Saving to Android gallery...'
+            addLog('Saving to Android gallery...')
             await Media.saveVideo({
               path: result.videoFilePath
             })
-            saveStatusLog.value = `Successfully saved to Android gallery! File: ${result.videoFilePath}`
+            addLog(`Successfully saved to Android gallery! File: ${result.videoFilePath}`)
           } catch (androidSaveError) {
-            saveStatusLog.value = `Android save failed: ${androidSaveError.message || androidSaveError}. Falling back to Share.`
+            addLog(`Android save failed: ${androidSaveError.message || androidSaveError}. Falling back to Share.`)
             let filePath = result.videoFilePath
             if (!filePath.startsWith('file://')) {
               filePath = 'file://' + filePath
@@ -276,14 +309,14 @@ export function useCamera() {
           }
         } else {
           // On iOS
-          saveStatusLog.value = `Saved on iOS. Natively saved via UISaveVideoAtPathToSavedPhotosAlbum to Photos Library. Temp path: ${result.videoFilePath}`
+          addLog(`Saved on iOS. Natively saved via UISaveVideoAtPathToSavedPhotosAlbum to Photos Library. Temp path: ${result.videoFilePath}`)
         }
         alert('Video successfully saved to your Photos gallery!')
       } else {
-        saveStatusLog.value = 'Error: No videoFilePath returned from CameraPreview.stopRecordVideo()'
+        addLog('Error: stopRecordVideo returned no videoFilePath!')
       }
     } catch (e) {
-      saveStatusLog.value = `Recording stop failed: ${e.message || e}`
+      addLog(`Recording stop failed: ${e.message || e}`)
       console.error('Failed to stop native recording', e)
       isRecording.value = false
     }

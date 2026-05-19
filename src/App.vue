@@ -62,12 +62,12 @@
     </div>
 
     <!-- Video Save Status Display for copying -->
-    <div v-if="saveStatusLog" class="save-status-display">
+    <div class="save-status-display">
       <div class="save-status-header">
-        <span>Video Saving Log</span>
-        <button @click="copySaveStatus" class="copy-btn">Copy</button>
+        <span>Teleprompter Console Log</span>
+        <button @click="copySaveStatus" class="copy-btn">Copy Logs</button>
       </div>
-      <div class="save-status-content">{{ saveStatusLog }}</div>
+      <div class="save-status-content">{{ saveStatusLog || 'No events recorded yet. Enable the camera or start recording to see logs.' }}</div>
     </div>
   </div>
 </template>
