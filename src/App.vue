@@ -31,28 +31,38 @@
       </div>
     </div>
 
-    <!-- Floating Stop Recording button at the bottom -->
-    <button 
-      v-if="isRecording" 
-      @click="stopRecording" 
-      class="floating-stop-btn"
-    >
-      <span class="stop-icon-dot"></span>
-      <span>Stop Recording</span>
-    </button>
-
-    <!-- iOS style Camera controls at the bottom when camera is enabled but not recording -->
+    <!-- Camera bottom control bar (resolution on left, record button in center) -->
     <div 
-      v-if="settings.cameraEnabled && !isEditorMode && !isRecording" 
-      class="camera-controls-bottom"
+      v-if="settings.cameraEnabled && !isEditorMode" 
+      class="bottom-camera-bar"
     >
-      <button @click="toggleResolution" class="ios-camera-btn">
-        {{ currentResolution === '4k' ? '4K' : 'HD' }}
-      </button>
-      <span class="ios-camera-divider">|</span>
-      <button @click="toggleFPS" class="ios-camera-btn">
-        {{ currentFPS }}
-      </button>
+      <!-- Resolution & FPS buttons on the left -->
+      <div v-if="!isRecording" class="camera-controls-left">
+        <button @click="toggleResolution" class="ios-camera-btn">
+          {{ currentResolution === '4k' ? '4K' : 'HD' }}
+        </button>
+        <span class="ios-camera-divider">|</span>
+        <button @click="toggleFPS" class="ios-camera-btn">
+          {{ currentFPS }}
+        </button>
+      </div>
+      <!-- Empty placeholder to balance flex layout when recording -->
+      <div v-else class="camera-controls-left-placeholder"></div>
+
+      <!-- Record button in the center -->
+      <div class="camera-record-center">
+        <button 
+          @click="isRecording ? stopRecording() : startRecording()" 
+          class="bottom-record-btn"
+          :class="{ 'is-recording': isRecording }"
+          :title="isRecording ? 'Stop Recording' : 'Start Recording'"
+        >
+          <span class="record-btn-inner"></span>
+        </button>
+      </div>
+      
+      <!-- Right side placeholder for flex centering symmetry -->
+      <div class="camera-controls-right-placeholder"></div>
     </div>
 
     <!-- iOS style Recording Timer at the top center -->
@@ -92,6 +102,7 @@ const isRecording = camera.isRecording
 const currentResolution = camera.currentResolution
 const currentFPS = camera.currentFPS
 const setResolutionAndFrameRate = camera.setResolutionAndFrameRate
+const startRecording = camera.startRecording
 
 // Toast Notification State & Controls
 const toast = ref({
@@ -450,91 +461,94 @@ onUnmounted(() => {
   font-style: italic;
 }
 
-/* Floating Stop Recording Button Styles */
-.floating-stop-btn {
+/* Camera Bottom Bar Styles */
+.bottom-camera-bar {
   position: fixed;
   bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10000;
+  left: 0;
+  width: 100%;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  background: rgba(239, 68, 68, 0.25);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(239, 68, 68, 0.5);
-  padding: 12px 28px;
-  border-radius: 50px;
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  letter-spacing: 0.5px;
-}
-
-.floating-stop-btn:hover {
-  background: rgba(239, 68, 68, 0.35);
-  border-color: rgba(239, 68, 68, 0.7);
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 15px 35px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.floating-stop-btn:active {
-  transform: translateX(-50%) translateY(1px);
-}
-
-.stop-icon-dot {
-  width: 10px;
-  height: 10px;
-  background: #ef4444;
-  border-radius: 50%;
-  position: relative;
-}
-
-.stop-icon-dot::after {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  border: 2px solid #ef4444;
-  border-radius: 50%;
-  animation: pulse-dot 1.5s infinite ease-out;
-}
-
-@keyframes pulse-dot {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
-
-/* iOS Style Camera Controls (Resolution / FPS) */
-.camera-controls-bottom {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
+  padding: 0 40px;
   z-index: 10000;
+  pointer-events: none;
+}
+
+.camera-controls-left,
+.camera-record-center {
+  pointer-events: auto;
+}
+
+.camera-controls-left {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  background: rgba(15, 15, 20, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   padding: 8px 20px;
   border-radius: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 130px;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: fadeInCameraBar 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.camera-controls-left-placeholder,
+.camera-controls-right-placeholder {
+  width: 130px;
+}
+
+.camera-record-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.bottom-record-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  padding: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.bottom-record-btn:hover {
+  transform: scale(1.05);
+}
+
+.bottom-record-btn:active {
+  transform: scale(0.95);
+}
+
+.record-btn-inner {
+  display: block;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #ef4444;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bottom-record-btn.is-recording .record-btn-inner {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+@keyframes fadeInCameraBar {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .ios-camera-btn {

@@ -3,10 +3,6 @@
     <div class="toolbar" v-if="!isManuallyHidden">
       <div class="controls-group left-group">
         <template v-if="!isEditorMode">
-          <button v-if="settings.cameraEnabled" @click="isRecording ? stopRecording() : startRecording()" class="btn icon-btn record-btn" :class="{ 'is-recording': isRecording }" :title="isRecording ? 'Stop Recording' : 'Start Recording'">
-            <Square v-if="isRecording" :size="16" fill="currentColor" />
-            <Circle v-else :size="16" fill="currentColor" />
-          </button>
           <button @click="handleTogglePlay" class="primary-btn icon-btn" :title="isPlaying ? 'Pause' : 'Play'">
             <Pause v-if="isPlaying" :size="20" />
             <Play v-else :size="20" />
