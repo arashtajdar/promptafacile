@@ -33,75 +33,78 @@
     </div>
 
     <!-- Camera bottom control bar (resolution on left, record button in center) -->
-    <div 
-      v-if="settings.cameraEnabled && !isEditorMode" 
+    <!-- Camera bar: unified frosted-glass row -->
+    <div
+      v-if="settings.cameraEnabled && !isEditorMode"
       class="bottom-camera-bar"
     >
-      <!-- Resolution & FPS buttons on the left -->
-      <div v-if="!isRecording" class="camera-controls-left-wrapper">
-        <!-- Resolution Dropdown Menu -->
-        <Transition name="fade-menu">
-          <div v-if="showResolutionMenu" class="camera-menu resolution-menu">
-            <button 
-              v-for="res in ['4k', '1080p', '720p']" 
-              :key="res"
-              @click.stop="selectResolution(res)"
-              class="menu-item"
-              :class="{ active: currentResolution === res }"
-            >
-              <span class="menu-item-text">{{ res === '4k' ? '4K UHD' : (res === '720p' ? '720p SD' : '1080p HD') }}</span>
-              <svg v-if="currentResolution === res" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </button>
-          </div>
-        </Transition>
+      <div class="camera-bar-inner">
 
-        <!-- FPS Dropdown Menu -->
-        <Transition name="fade-menu">
-          <div v-if="showFPSMenu" class="camera-menu fps-menu">
-            <button 
-              v-for="fps in [60, 30]" 
-              :key="fps"
-              @click.stop="selectFPS(fps)"
-              class="menu-item"
-              :class="{ active: currentFPS === fps }"
-            >
-              <span class="menu-item-text">{{ fps }} FPS</span>
-              <svg v-if="currentFPS === fps" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </button>
+        <!-- LEFT: resolution & FPS (or timer when recording) -->
+        <div class="camera-bar-left">
+          <!-- When NOT recording: resolution + fps pickers -->
+          <template v-if="!isRecording">
+            <div class="camera-controls-left-wrapper">
+              <!-- Resolution dropdown -->
+              <Transition name="fade-menu">
+                <div v-if="showResolutionMenu" class="camera-menu resolution-menu">
+                  <button
+                    v-for="res in ['4k', '1080p', '720p']" :key="res"
+                    @click.stop="selectResolution(res)"
+                    class="menu-item" :class="{ active: currentResolution === res }"
+                  >
+                    <span class="menu-item-text">{{ res === '4k' ? '4K UHD' : (res === '720p' ? '720p SD' : '1080p HD') }}</span>
+                    <svg v-if="currentResolution === res" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </button>
+                </div>
+              </Transition>
+              <!-- FPS dropdown -->
+              <Transition name="fade-menu">
+                <div v-if="showFPSMenu" class="camera-menu fps-menu">
+                  <button
+                    v-for="fps in [60, 30]" :key="fps"
+                    @click.stop="selectFPS(fps)"
+                    class="menu-item" :class="{ active: currentFPS === fps }"
+                  >
+                    <span class="menu-item-text">{{ fps }} FPS</span>
+                    <svg v-if="currentFPS === fps" class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </button>
+                </div>
+              </Transition>
+              <!-- Pill badges -->
+              <div class="cam-badge-row">
+                <button @click.stop="toggleResolutionMenu" class="cam-badge" :class="{ active: showResolutionMenu }">
+                  {{ currentResolution === '4k' ? '4K' : (currentResolution === '720p' ? '720p' : 'HD') }}
+                </button>
+                <span class="cam-badge-sep"></span>
+                <button @click.stop="toggleFPSMenu" class="cam-badge" :class="{ active: showFPSMenu }">
+                  {{ currentFPS }} fps
+                </button>
+              </div>
+            </div>
+          </template>
+          <!-- When recording: show live timer -->
+          <div v-else class="recording-timer-pill">
+            <span class="timer-dot"></span>
+            <span class="timer-text">{{ formattedTime }}</span>
           </div>
-        </Transition>
+        </div>
 
-        <div class="camera-controls-left">
-          <button @click.stop="toggleResolutionMenu" class="ios-camera-btn" :class="{ 'menu-open': showResolutionMenu }">
-            {{ currentResolution === '4k' ? '4K' : (currentResolution === '720p' ? '720P' : 'HD') }}
-          </button>
-          <span class="ios-camera-divider">|</span>
-          <button @click.stop="toggleFPSMenu" class="ios-camera-btn" :class="{ 'menu-open': showFPSMenu }">
-            {{ currentFPS }}
+        <!-- CENTER: record button -->
+        <div class="camera-bar-center">
+          <button
+            @click="isRecording ? stopRecording() : startRecording()"
+            class="bottom-record-btn"
+            :class="{ 'is-recording': isRecording }"
+            :title="isRecording ? 'Stop Recording' : 'Start Recording'"
+          >
+            <span class="record-btn-inner"></span>
           </button>
         </div>
-      </div>
-      <!-- Empty placeholder to balance flex layout when recording -->
-      <div v-else class="camera-controls-left-placeholder"></div>
 
-      <!-- Record button in the center -->
-      <div class="camera-record-center">
-        <button 
-          @click="isRecording ? stopRecording() : startRecording()" 
-          class="bottom-record-btn"
-          :class="{ 'is-recording': isRecording }"
-          :title="isRecording ? 'Stop Recording' : 'Start Recording'"
-        >
-          <span class="record-btn-inner"></span>
-        </button>
+        <!-- RIGHT: spacer to balance layout -->
+        <div class="camera-bar-right"></div>
       </div>
-      
-      <!-- Right side: timer when recording, empty placeholder otherwise -->
-      <div v-if="isRecording" class="camera-controls-right recording-timer-inline">
-        <span class="timer-dot"></span>
-        <span class="timer-text">{{ formattedTime }}</span>
-      </div>
-      <div v-else class="camera-controls-right-placeholder"></div>
     </div>
 
     <!-- Toast Notification -->
@@ -440,7 +443,8 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-top: calc(env(safe-area-inset-top) + 60px); /* Space for toolbar */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 80px); /* Space for bottom toolbar pill */
   height: 100%;
 }
 
@@ -539,99 +543,161 @@ onUnmounted(() => {
   font-style: italic;
 }
 
-/* Camera Bottom Bar Styles */
+/* ── Camera Bottom Bar ──────────────────────────────────────────── */
 .bottom-camera-bar {
   position: fixed;
-  bottom: 40px;
+  bottom: calc(env(safe-area-inset-bottom) + 108px);
   left: 0;
   width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 40px;
   z-index: 10000;
   pointer-events: none;
+  display: flex;
+  justify-content: center;
+  padding: 0 24px;
 }
 
-.camera-controls-left,
-.camera-record-center {
+.camera-bar-inner {
   pointer-events: auto;
-}
-
-.camera-controls-left-wrapper {
-  position: relative;
-  pointer-events: auto;
-}
-
-.camera-controls-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(15, 15, 20, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 8px 20px;
-  border-radius: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  min-width: 130px;
-  justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  animation: fadeInCameraBar 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(10, 10, 14, 0.72);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  padding: 10px 20px;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  animation: fadeInCameraBar 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.camera-controls-left-placeholder,
-.camera-controls-right-placeholder {
-  width: 130px;
-}
-
-.camera-record-center {
+.camera-bar-left,
+.camera-bar-right {
   flex: 1;
   display: flex;
+  align-items: center;
+}
+.camera-bar-right { justify-content: flex-end; }
+
+.camera-bar-center {
+  display: flex;
   justify-content: center;
+  padding: 0 16px;
 }
 
+/* Resolution + FPS badge row */
+.camera-controls-left-wrapper {
+  position: relative;
+}
+
+.cam-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cam-badge {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.7);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.cam-badge:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+.cam-badge.active {
+  background: rgba(59,130,246,0.2);
+  border-color: rgba(59,130,246,0.4);
+  color: #93c5fd;
+}
+
+.cam-badge-sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+/* Record button */
 .bottom-record-btn {
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: transparent;
-  border: 4px solid #ffffff;
+  border: 3.5px solid rgba(255,255,255,0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   outline: none;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   padding: 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
-
-.bottom-record-btn:hover {
-  transform: scale(1.05);
-}
-
-.bottom-record-btn:active {
-  transform: scale(0.95);
-}
+.bottom-record-btn:hover  { transform: scale(1.06); }
+.bottom-record-btn:active { transform: scale(0.93); }
 
 .record-btn-inner {
   display: block;
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: #ef4444;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 0 14px rgba(239,68,68,0.55);
+  transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
 .bottom-record-btn.is-recording .record-btn-inner {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 18px rgba(239,68,68,0.7);
 }
 
 @keyframes fadeInCameraBar {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+/* Recording timer (left side, replaces badge row) */
+.recording-timer-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.timer-dot {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(239,68,68,0.7);
+  animation: blink 1s infinite step-end;
+}
+
+.timer-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
 .ios-camera-btn {
