@@ -847,10 +847,11 @@ onUnmounted(() => {
 /* Toast Notification Styles */
 .toast-notification {
   position: fixed;
-  bottom: 130px;
+  /* sit above camera bar + toolbar pill */
+  bottom: calc(env(safe-area-inset-bottom) + 210px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10005;
+  z-index: 10020;
   display: flex;
   align-items: center;
   gap: 12px;
