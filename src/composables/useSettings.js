@@ -1,7 +1,7 @@
 import { ref, watch } from 'vue'
 
 const defaultSettings = {
-  script: 'Welcome to your Teleprompter!\n\nPaste your script here.\n\nUse the controls above to start scrolling, adjust speed, and text size.',
+  script: 'Welcome to PromptaFacile!\n\nPaste your script here.\n\nUse the controls above to start scrolling, adjust speed, and text size.',
   speed: 1, // 0.2x to 10x
   fontSize: 60, // 20px to 120px
   lineHeight: 1.5, // 1.0 to 3.0

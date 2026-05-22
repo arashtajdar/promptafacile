@@ -312,6 +312,7 @@ provide('togglePlay', scroll.toggle)
 provide('reset', scroll.reset)
 provide('scrollY', scroll.scrollY)
 provide('maxScroll', scroll.maxScroll)
+provide('countdown', scroll.countdown)
 
 // Provide camera state
 provide('isRecording', camera.isRecording)

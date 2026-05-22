@@ -1,4 +1,4 @@
-package com.teleprompter.app;
+package com.promptafacile.teleprompter;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -1,9 +1,19 @@
 <template>
   <div class="teleprompter-container" :class="{ 'camera-active': settings.cameraEnabled }">
+    <Transition name="fade-countdown">
+      <div v-if="countdown > 0" class="countdown-overlay">
+        <Transition name="number-fade" mode="out-in">
+          <div :key="countdown" class="countdown-number">{{ countdown }}</div>
+        </Transition>
+      </div>
+    </Transition>
     <div 
       class="scroll-area" 
       :style="{ transform: `translateY(-${scrollY}px)` }"
       ref="contentRef"
+      @wheel.prevent="onWheel"
+      @touchstart="onTouchStart"
+      @touchmove.prevent="onTouchMove"
     >
       <div 
         class="script-content"
@@ -27,6 +37,7 @@ import { computed, inject, ref, onMounted, onUpdated } from 'vue'
 const { settings } = inject('settings')
 const scrollY = inject('scrollY')
 const maxScroll = inject('maxScroll')
+const countdown = inject('countdown')
 
 const contentRef = ref(null)
 
@@ -40,6 +51,26 @@ const updateMaxScroll = () => {
     const contentHeight = contentRef.value.scrollHeight
     const screenHeight = window.innerHeight
     maxScroll.value = Math.max(0, contentHeight - screenHeight + 200) // 200px padding at end
+  }
+}
+
+const onWheel = (e) => {
+  scrollY.value = Math.max(0, Math.min(maxScroll.value, scrollY.value + e.deltaY))
+}
+
+let lastTouchY = 0
+const onTouchStart = (e) => {
+  if (e.touches.length > 0) {
+    lastTouchY = e.touches[0].clientY
+  }
+}
+
+const onTouchMove = (e) => {
+  if (e.touches.length > 0) {
+    const currentY = e.touches[0].clientY
+    const deltaY = lastTouchY - currentY
+    scrollY.value = Math.max(0, Math.min(maxScroll.value, scrollY.value + deltaY))
+    lastTouchY = currentY
   }
 }
 
@@ -88,5 +119,46 @@ onUpdated(() => {
 .script-content p {
   margin: 0 0 1em 0;
   min-height: 1em; /* For empty lines */
+}
+
+/* Countdown Overlay */
+.countdown-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.countdown-number {
+  font-size: 15rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.number-fade-enter-active,
+.number-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.number-fade-enter-from,
+.number-fade-leave-to {
+  opacity: 0;
+}
+
+.fade-countdown-enter-active,
+.fade-countdown-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-countdown-enter-from,
+.fade-countdown-leave-to {
+  opacity: 0;
 }
 </style>

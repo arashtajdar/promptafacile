@@ -114,7 +114,7 @@
           <!-- RIGHT: Utility (no mode toggle — handled in left section) -->
           <div class="pill-section util-section">
             <button id="btn-camera"
-              @click="settings.cameraEnabled = !settings.cameraEnabled"
+              @click="toggleCamera"
               class="pill-btn camera-btn" :class="{ 'is-active': settings.cameraEnabled }"
               title="Toggle Camera">
               <Camera :size="16" />
@@ -182,6 +182,13 @@ const toggleFullscreen = () => {
     document.documentElement.requestFullscreen().catch(() => {})
   } else {
     document.exitFullscreen()
+  }
+}
+
+const toggleCamera = () => {
+  settings.value.cameraEnabled = !settings.value.cameraEnabled
+  if (settings.value.cameraEnabled) {
+    panelOpen.value = false
   }
 }
 </script>

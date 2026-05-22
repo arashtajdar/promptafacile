@@ -4,23 +4,36 @@ export function useScroll(settingsRef) {
   const isPlaying = ref(false)
   const scrollY = ref(settingsRef && settingsRef.value && typeof settingsRef.value.lastScrollPosition === 'number' && !isNaN(settingsRef.value.lastScrollPosition) ? settingsRef.value.lastScrollPosition : 0) // Internal state for translate
   const maxScroll = ref(0)
+  const countdown = ref(0)
   
   let animationFrameId = null
   let lastTime = 0
   let tickCount = 0
+  let countdownIntervalId = null
   
   const start = () => {
     console.log('[useScroll] start() called, current isPlaying:', isPlaying.value)
     if (!isPlaying.value) {
-      tickCount = 0
-      if (maxScroll.value > 0 && scrollY.value >= maxScroll.value) {
-        console.log('[useScroll] scrollY is past maxScroll, resetting to 0 before start. scrollY:', scrollY.value, 'maxScroll:', maxScroll.value)
-        scrollY.value = 0
-      }
       isPlaying.value = true
-      lastTime = performance.now()
-      animationFrameId = requestAnimationFrame(tick)
-      console.log('[useScroll] requestAnimationFrame started, animationFrameId:', animationFrameId)
+      countdown.value = 3
+      
+      countdownIntervalId = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(countdownIntervalId)
+          countdownIntervalId = null
+          countdown.value = 0
+          
+          tickCount = 0
+          if (maxScroll.value > 0 && scrollY.value >= maxScroll.value) {
+            console.log('[useScroll] scrollY is past maxScroll, resetting to 0 before start. scrollY:', scrollY.value, 'maxScroll:', maxScroll.value)
+            scrollY.value = 0
+          }
+          lastTime = performance.now()
+          animationFrameId = requestAnimationFrame(tick)
+          console.log('[useScroll] requestAnimationFrame started, animationFrameId:', animationFrameId)
+        }
+      }, 1000)
     }
   }
   
@@ -28,6 +41,11 @@ export function useScroll(settingsRef) {
     console.log('[useScroll] pause() called, current isPlaying:', isPlaying.value)
     if (isPlaying.value) {
       isPlaying.value = false
+      if (countdownIntervalId) {
+        clearInterval(countdownIntervalId)
+        countdownIntervalId = null
+      }
+      countdown.value = 0
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId)
         console.log('[useScroll] cancelAnimationFrame called for animationFrameId:', animationFrameId)
@@ -54,8 +72,8 @@ export function useScroll(settingsRef) {
   }
 
   const tick = (currentTime) => {
-    if (!isPlaying.value) {
-      console.log('[useScroll] tick aborted because isPlaying is false')
+    if (!isPlaying.value || countdown.value > 0) {
+      console.log('[useScroll] tick aborted because isPlaying is false or counting down')
       return
     }
     
@@ -97,6 +115,7 @@ export function useScroll(settingsRef) {
     isPlaying,
     scrollY,
     maxScroll,
+    countdown,
     start,
     pause,
     toggle,

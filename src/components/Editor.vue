@@ -1,14 +1,11 @@
 <template>
   <div class="editor-container">
     <div class="editor-glass-wrapper">
-      <textarea
-        v-model="settings.script"
-        placeholder="Paste or write your script here..."
-        class="script-editor"
-      ></textarea>
+      <textarea v-model="settings.script" placeholder="Paste or write your script here..."
+        class="script-editor"></textarea>
     </div>
     <footer class="editor-footer">
-      <span class="app-version">Teleprompter v1.0.0</span>
+      <span class="app-version">PromptaFacile v1.0.0</span>
       <div class="footer-links">
         <button @click="openAbout" class="footer-link">About</button>
         <span class="footer-sep">·</span>
@@ -124,10 +121,12 @@ const openAbout = () => {
   .editor-container {
     padding: 16px;
   }
+
   .script-editor {
     font-size: 1.1rem;
     padding: 16px;
   }
+
   .editor-footer {
     margin-top: 12px;
     padding: 0 4px;

@@ -10,7 +10,7 @@ export function useCamera() {
   const currentResolution = ref('1080p')
   const currentFPS = ref(30)
   const saveStatusLog = ref('')
-  
+
   const addLog = (msg) => {
     const time = new Date().toLocaleTimeString()
     saveStatusLog.value = (saveStatusLog.value ? saveStatusLog.value + '\n' : '') + `[${time}] ${msg}`
@@ -40,9 +40,9 @@ export function useCamera() {
         try {
           // Attempt front camera by preference and ask for both audio and video
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { 
-              facingMode: 'user', 
-              width: { ideal: widthConstraint }, 
+            video: {
+              facingMode: 'user',
+              width: { ideal: widthConstraint },
               height: { ideal: heightConstraint },
               frameRate: { ideal: fpsConstraint }
             },
@@ -51,9 +51,9 @@ export function useCamera() {
         } catch (err) {
           console.warn('Failed to get camera with audio, trying video only...', err)
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { 
-              facingMode: 'user', 
-              width: { ideal: widthConstraint }, 
+            video: {
+              facingMode: 'user',
+              width: { ideal: widthConstraint },
               height: { ideal: heightConstraint },
               frameRate: { ideal: fpsConstraint }
             }
@@ -181,14 +181,14 @@ export function useCamera() {
       }
       try {
         recordedChunks = []
-        
+
         // Build a combined stream with video + audio tracks
         const combinedTracks = []
         webStream.getVideoTracks().forEach(t => combinedTracks.push(t))
         webStream.getAudioTracks().forEach(t => combinedTracks.push(t))
         const recordingStream = new MediaStream(combinedTracks)
         addLog(`Recording stream tracks: video=${recordingStream.getVideoTracks().length}, audio=${recordingStream.getAudioTracks().length}`)
-        
+
         // Select an appropriate mimetype
         let options = { mimeType: 'video/webm;codecs=vp9,opus' }
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
@@ -205,7 +205,7 @@ export function useCamera() {
         }
 
         mediaRecorder = new MediaRecorder(recordingStream, options)
-        
+
         mediaRecorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             recordedChunks.push(event.data)
@@ -215,7 +215,7 @@ export function useCamera() {
         mediaRecorder.onstop = () => {
           const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' })
           const url = URL.createObjectURL(blob)
-          
+
           // Trigger a clean auto-download for web users
           const a = document.createElement('a')
           a.style.display = 'none'
@@ -223,17 +223,17 @@ export function useCamera() {
           a.download = `teleprompter-recording-${Date.now()}.webm`
           document.body.appendChild(a)
           a.click()
-          
+
           setTimeout(() => {
             document.body.removeChild(a)
             window.URL.revokeObjectURL(url)
           }, 100)
-          
+
           addLog('Web recording completed & download triggered')
           alert('Recording completed! Video downloaded to your device.')
         }
 
-        mediaRecorder.start(1000) // Chunk every 1s
+        mediaRecorder.start() // Record in a single chunk
         isRecording.value = true
         addLog('Web MediaRecorder started')
       } catch (e) {
@@ -289,7 +289,7 @@ export function useCamera() {
       addLog('Invoking CameraPreview.stopRecordVideo...')
       const result = await CameraPreview.stopRecordVideo()
       isRecording.value = false
-      
+
       addLog(`Stop resolved. Native path returned: ${result?.videoFilePath || 'NONE'}`)
       if (result && result.videoFilePath) {
         if (Capacitor.getPlatform() === 'android') {
@@ -309,7 +309,7 @@ export function useCamera() {
             }
             await Share.share({
               title: 'PromptaFacile Recording',
-              text: 'Here is your recorded teleprompter video!',
+              text: 'Here is your recorded video!',
               files: [filePath],
               dialogTitle: 'Save or Share Video'
             })
@@ -351,16 +351,16 @@ export function useCamera() {
         if (webStream) {
           webStream.getTracks().forEach(track => track.stop())
         }
-        
+
         const heightConstraint = resolution === '4k' ? 2160 : (resolution === '720p' ? 720 : 1080)
         const widthConstraint = resolution === '4k' ? 3840 : (resolution === '720p' ? 1280 : 1920)
-        
+
         let stream
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { 
-              facingMode: 'user', 
-              width: { ideal: widthConstraint }, 
+            video: {
+              facingMode: 'user',
+              width: { ideal: widthConstraint },
               height: { ideal: heightConstraint },
               frameRate: { ideal: fps }
             },
@@ -369,15 +369,15 @@ export function useCamera() {
         } catch (err) {
           console.warn('Failed to get camera with audio, trying video only...', err)
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { 
-              facingMode: 'user', 
-              width: { ideal: widthConstraint }, 
+            video: {
+              facingMode: 'user',
+              width: { ideal: widthConstraint },
               height: { ideal: heightConstraint },
               frameRate: { ideal: fps }
             }
           })
         }
-        
+
         webStream = stream
         if (webVideoElement) {
           webVideoElement.srcObject = stream

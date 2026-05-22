@@ -310,12 +310,19 @@ if (fs.existsSync(androidPath)) {
 
   // Add setResolutionAndFrameRate method if not already present
   if (!content.includes('public void setResolutionAndFrameRate(')) {
-    const target = 'public void stopRecordVideo(PluginCall call) {';
-    const method = `    @PluginMethod
-    public void setResolutionAndFrameRate(PluginCall call) {
-        call.resolve();
-    }\n\n    ${target}`;
-    content = content.replace(target, method);
+    const targetCRLF = '@PluginMethod\r\n    public void stopRecordVideo(PluginCall call) {';
+    const targetLF = '@PluginMethod\n    public void stopRecordVideo(PluginCall call) {';
+    const method = `@PluginMethod\n    public void setResolutionAndFrameRate(PluginCall call) {\n        call.resolve();\n    }\n\n    @PluginMethod\n    public void stopRecordVideo(PluginCall call) {`;
+    
+    if (content.includes(targetCRLF)) {
+      content = content.replace(targetCRLF, method);
+    } else if (content.includes(targetLF)) {
+      content = content.replace(targetLF, method);
+    } else {
+      const fallbackTarget = 'public void stopRecordVideo(PluginCall call) {';
+      const fallbackMethod = `@PluginMethod\n    public void setResolutionAndFrameRate(PluginCall call) {\n        call.resolve();\n    }\n\n    public void stopRecordVideo(PluginCall call) {`;
+      content = content.replace(fallbackTarget, fallbackMethod);
+    }
   }
 
   fs.writeFileSync(androidPath, content, 'utf8');
