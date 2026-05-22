@@ -189,16 +189,16 @@ export function useCamera() {
         const recordingStream = new MediaStream(combinedTracks)
         addLog(`Recording stream tracks: video=${recordingStream.getVideoTracks().length}, audio=${recordingStream.getAudioTracks().length}`)
 
-        // Select an appropriate mimetype
-        let options = { mimeType: 'video/webm;codecs=vp9,opus' }
+        // Select an appropriate mimetype, prioritizing MP4
+        let options = { mimeType: 'video/mp4' }
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = { mimeType: 'video/webm;codecs=vp9,opus' }
+        }
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
           options = { mimeType: 'video/webm;codecs=vp8,opus' }
         }
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
           options = { mimeType: 'video/webm' }
-        }
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = { mimeType: 'video/mp4' }
         }
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
           options = {} // System default
@@ -213,14 +213,16 @@ export function useCamera() {
         }
 
         mediaRecorder.onstop = () => {
-          const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' })
+          const mimeType = mediaRecorder.mimeType || 'video/webm'
+          const blob = new Blob(recordedChunks, { type: mimeType })
           const url = URL.createObjectURL(blob)
 
           // Trigger a clean auto-download for web users
           const a = document.createElement('a')
           a.style.display = 'none'
           a.href = url
-          a.download = `teleprompter-recording-${Date.now()}.webm`
+          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm'
+          a.download = `teleprompter-recording-${Date.now()}.${ext}`
           document.body.appendChild(a)
           a.click()
 
