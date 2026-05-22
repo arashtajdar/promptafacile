@@ -5,7 +5,7 @@
         class="script-editor"></textarea>
     </div>
     <footer class="editor-footer">
-      <span class="app-version">PromptaFacile v1.0.0</span>
+      <span class="app-version">PromptaFacile v2.0.0</span>
       <div class="footer-links">
         <button @click="openAbout" class="footer-link">About</button>
         <span class="footer-sep">·</span>
