@@ -51,6 +51,7 @@ if (fs.existsSync(controllerPath)) {
             guard let captureSession = self.captureSession else { throw CameraControllerError.captureSessionIsMissing }
 
             self.videoOutput = AVCaptureMovieFileOutput()
+            self.videoOutput?.movieFragmentInterval = CMTime.invalid
             if captureSession.canAddOutput(self.videoOutput!) {
                 captureSession.addOutput(self.videoOutput!)
             } else {
@@ -58,6 +59,16 @@ if (fs.existsSync(controllerPath)) {
             }
         }\n\n        ${target}`;
     content = content.replace(target, helper);
+  }
+
+  // Also apply it if already patched
+  if (content.includes('self.videoOutput = AVCaptureMovieFileOutput()')) {
+    if (!content.includes('movieFragmentInterval = CMTime.invalid')) {
+        content = content.replace(
+            'self.videoOutput = AVCaptureMovieFileOutput()',
+            'self.videoOutput = AVCaptureMovieFileOutput()\\n            self.videoOutput?.movieFragmentInterval = CMTime.invalid'
+        );
+    }
   }
 
   // Uncomment try configureVideoOutput() inside prepare() if not already done
