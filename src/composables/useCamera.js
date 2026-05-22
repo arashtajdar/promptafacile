@@ -3,6 +3,7 @@ import { CameraPreview } from '@capacitor-community/camera-preview'
 import { Capacitor } from '@capacitor/core'
 import { Share } from '@capacitor/share'
 import { Media } from '@capacitor-community/media'
+import { KeepAwake } from '@capgo/capacitor-keep-awake'
 
 export function useCamera() {
   const isRecording = ref(false)
@@ -172,6 +173,13 @@ export function useCamera() {
 
   const startRecording = async () => {
     addLog('startRecording called')
+    
+    try {
+      await KeepAwake.keepAwake()
+    } catch (e) {
+      console.warn('KeepAwake error:', e)
+    }
+
     if (!Capacitor.isNativePlatform()) {
       // Web fallback MediaRecorder recording
       if (!webStream) {
@@ -271,6 +279,13 @@ export function useCamera() {
 
   const stopRecording = async () => {
     addLog('stopRecording called')
+
+    try {
+      await KeepAwake.allowSleep()
+    } catch (e) {
+      console.warn('KeepAwake error:', e)
+    }
+
     if (!Capacitor.isNativePlatform()) {
       // Web fallback
       try {

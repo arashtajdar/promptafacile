@@ -12,6 +12,7 @@ dependencies {
     implementation project(':capacitor-community-camera-preview')
     implementation project(':capacitor-community-media')
     implementation project(':capacitor-share')
+    implementation project(':capgo-capacitor-keep-awake')
 
 }
 
